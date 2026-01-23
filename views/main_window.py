@@ -14,14 +14,15 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Slot
 from PySide6.QtGui import QAction, QIcon
 
-from config.settings import Settings
-from config.app_config import AppConfig
 from resources import get_icon_path
 from services.player_service import PlayerService
 from services.match_history_service import MatchHistoryService
 from .settings_widget import SettingsWidget
 from .all_stats_widget import AllStatsWidget
 from .player_detail_widget import PlayerDetailWidget
+from config.settings import Settings
+from config.app_config import AppConfig
+from config.version_config import VersionConfig
 
 
 class MainWindow(QMainWindow):
@@ -201,10 +202,11 @@ class MainWindow(QMainWindow):
         QMessageBox.about(
             self,
             "GG Archive 정보",
-            "GG Archive v1.0.0\n\n"
+            f"GG Archive v{VersionConfig.version}\n\n"
             "SQLite in-memory 데이터베이스를 사용하는\n"
             "데스크톱 애플리케이션입니다.\n\n"
-            "© 2026 GG Archive"
+            f"© 2026 GG Archive v{VersionConfig.version}"
+            "Developed by pentas1150"
         )
 
     @Slot()
