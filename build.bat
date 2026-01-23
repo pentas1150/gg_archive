@@ -44,4 +44,5 @@ echo dist\ folder contents:
 echo   - %APP_NAME%.exe  (executable)
 
 endlocal
-pause
+:: CI 환경에서는 pause 하지 않음
+if "%CI%"=="" pause
