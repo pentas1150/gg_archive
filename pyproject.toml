@@ -1,0 +1,41 @@
+[tool.poetry]
+name = "gg_archive"
+version = "1.0.0"
+description = "GG Archive - Desktop Application with SQLite"
+authors = []
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = ">=3.10,<3.13"
+PySide6 = ">=6.6.0"
+SQLAlchemy = ">=2.0.0"
+pydantic = ">=2.12.5"
+watchdog = ">=4.0.0"
+tzdata = ">=2024.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = ">=7.0.0"
+pytest-cov = ">=4.0.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+pythonpath = ["."]
+addopts = "-v"
+
+[tool.coverage.run]
+source = ["repositories", "services", "models", "database"]
+omit = ["tests/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]
