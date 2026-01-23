@@ -42,19 +42,48 @@ jobs:
       - name: Generate release notes
         id: release_notes
         run: |
-          # 이전 태그 찾기
-          $previousTag = git describe --tags --abbrev=0 HEAD^ 2>$null
-          if (-not $previousTag) {
-            $previousTag = $(git rev-list --max-parents=0 HEAD)
+          # 현재 태그를 제외한 이전 태그 찾기
+          $allTags = git tag --sort=-creatordate | Where-Object { $_ -ne "${{ github.ref_name }}" }
+          $previousTag = $allTags | Select-Object -First 1
+
+          # 비교 범위 설정
+          if ($previousTag) {
+            $range = "$previousTag..HEAD"
+            $compareUrl = "https://github.com/${{ github.repository }}/compare/$previousTag...${{ github.ref_name }}"
+          } else {
+            # 첫 번째 태그인 경우: 전체 히스토리
+            $range = "HEAD"
+            $compareUrl = "https://github.com/${{ github.repository }}/commits/${{ github.ref_name }}"
           }
 
+          Write-Host "Previous tag: $previousTag"
+          Write-Host "Range: $range"
+
           # 기여자 목록 생성
-          $contributors = git log $previousTag..HEAD --format='%an' | Sort-Object -Unique
-          $contributorList = ($contributors | ForEach-Object { "- $_" }) -join "`n"
+          if ($previousTag) {
+            $contributors = git log $range --format='%an' | Sort-Object -Unique
+          } else {
+            $contributors = git log --format='%an' | Sort-Object -Unique
+          }
+
+          if ($contributors) {
+            $contributorList = ($contributors | ForEach-Object { "- $_" }) -join "`n"
+          } else {
+            $contributorList = "- No contributors found"
+          }
 
           # 주요 커밋 목록 생성
-          $commits = git log $previousTag..HEAD --format='- %s (%h)' --no-merges | Select-Object -First 20
-          $commitList = $commits -join "`n"
+          if ($previousTag) {
+            $commits = git log $range --format='- %s (%h)' --no-merges | Select-Object -First 20
+          } else {
+            $commits = git log --format='- %s (%h)' --no-merges | Select-Object -First 20
+          }
+
+          if ($commits) {
+            $commitList = $commits -join "`n"
+          } else {
+            $commitList = "- Initial release"
+          }
 
           # 릴리즈 노트 작성
           $releaseNotes = @"
@@ -67,23 +96,34 @@ jobs:
           $commitList
 
           ---
-          **Full Changelog**: https://github.com/${{ github.repository }}/compare/$previousTag...${{ github.ref_name }}
+          **Full Changelog**: $compareUrl
           "@
 
           # 파일로 저장
           $releaseNotes | Out-File -FilePath release_notes.md -Encoding utf8
+
+          # 디버그 출력
+          Write-Host "=== Release Notes ==="
+          Get-Content release_notes.md
+        shell: pwsh
+
+      - name: Create ZIP archive
+        run: |
+          Compress-Archive -Path dist/GG_Archive.exe -DestinationPath dist/GG_Archive-${{ steps.get_version.outputs.VERSION }}.zip
         shell: pwsh
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
           name: GG_Archive-${{ steps.get_version.outputs.VERSION }}
-          path: dist/GG_Archive.exe
+          path: |
+            dist/GG_Archive-${{ steps.get_version.outputs.VERSION }}.zip
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          files: dist/GG_Archive.exe
+          files: |
+            dist/GG_Archive-${{ steps.get_version.outputs.VERSION }}.zip
           body_path: release_notes.md
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
