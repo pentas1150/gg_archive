@@ -1,0 +1,32 @@
+from datetime import datetime
+
+from sqlalchemy import (
+    ForeignKey,
+    String,
+    Integer,
+    Boolean,
+    DateTime,
+    Index
+)
+from sqlalchemy.orm import Mapped, mapped_column
+
+from database.base import Base, TimestampMixin
+
+
+class MatchHistory(Base, TimestampMixin):
+    __tablename__ = "match_histories"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False)
+    opponent_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    race: Mapped[str] = mapped_column(String(10), nullable=False)
+    map_id: Mapped[int] = mapped_column(ForeignKey("maps.id"), nullable=False)
+    map_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    is_win: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    playtime: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Playtime in seconds")
+    played_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
+
+    Index("idx_match_history_played_at", played_at.desc())
+
+    def __repr__(self) -> str:
+        return f"<MatchHistory(id={self.id})>"
