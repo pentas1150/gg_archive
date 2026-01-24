@@ -36,6 +36,16 @@ class QuickSettingsDialog(QDialog):
         layout.setSpacing(20)
         layout.setContentsMargins(24, 24, 24, 24)
 
+        # Set dialog background to match All Stats widget
+        self.setStyleSheet("""
+            QDialog {
+                background: #f5f6fa;
+            }
+            QLabel {
+                color: #2c3e50;
+            }
+        """)
+
         # Title
         title = QLabel("빠른 설정")
         title.setStyleSheet("""
@@ -43,6 +53,7 @@ class QuickSettingsDialog(QDialog):
                 font-size: 18px;
                 font-weight: bold;
                 color: #2c3e50;
+                background: transparent;
             }
         """)
         layout.addWidget(title)
@@ -80,6 +91,22 @@ class QuickSettingsDialog(QDialog):
             }
             QSpinBox::up-button:hover, QSpinBox::down-button:hover {
                 background: #d5dbdb;
+            }
+            QSpinBox::up-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-bottom: 5px solid #2c3e50;
+                width: 0;
+                height: 0;
+            }
+            QSpinBox::down-arrow {
+                image: none;
+                border-left: 5px solid transparent;
+                border-right: 5px solid transparent;
+                border-top: 5px solid #2c3e50;
+                width: 0;
+                height: 0;
             }
         """
 

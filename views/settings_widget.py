@@ -198,6 +198,7 @@ class SettingsWidget(QWidget):
                 font-size: 14px;
                 padding: 8px 16px;
                 background: #ecf0f1;
+                color: #2c3e50;
                 border: 1px solid #bdc3c7;
                 border-radius: 4px;
             }
