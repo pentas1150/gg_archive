@@ -114,7 +114,8 @@ desktop.ini
 **/config.json
 
 # screp binary (any path)
-**/screp*
+**/screp
+**/screp.exe
 
 # Replay files
 *.rep
