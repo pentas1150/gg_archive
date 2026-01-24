@@ -1,6 +1,9 @@
 """
 Application class - QApplication setup and lifecycle management.
 """
+import sys
+from pathlib import Path
+
 from PySide6.QtWidgets import QApplication, QStyleFactory
 from PySide6.QtGui import QPalette, QColor
 
@@ -12,6 +15,7 @@ from services.background.replay_watch_service import ReplayWatchService
 from services.player_service import PlayerService
 from services.match_history_service import MatchHistoryService
 from views.main_window import MainWindow
+from views.screp_download_dialog import ScrepDownloadDialog
 
 
 class Application:
@@ -96,12 +100,43 @@ class Application:
 
     def run(self) -> int:
         """Run the application event loop."""
+        # Check for screp executable before showing main window
+        self._check_screp_executable()
+
         self.main_window.show()
 
         # Perform final backup on exit
         result = self.qapp.exec()
         self._on_exit()
         return result
+
+    def _get_app_directory(self) -> Path:
+        """Get the application's root directory."""
+        # When running as frozen executable (PyInstaller)
+        if getattr(sys, 'frozen', False):
+            return Path(sys.executable).parent
+        # When running as script
+        return Path(__file__).parent
+
+    def _check_screp_executable(self) -> bool:
+        """
+        Check if screp executable exists in the application directory.
+        Shows download dialog if not found.
+
+        Returns:
+            True if screp is found, False otherwise.
+        """
+        app_dir = self._get_app_directory()
+        screp_path = app_dir / "screp"
+        screp_exe_path = app_dir / "screp.exe"
+
+        if screp_path.exists() or screp_exe_path.exists():
+            return True
+
+        # Show download dialog
+        dialog = ScrepDownloadDialog()
+        dialog.exec()
+        return False
 
     def _on_exit(self):
         """Cleanup on application exit."""
