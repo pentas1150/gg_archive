@@ -103,6 +103,6 @@ class MatchHistoryRepository(BaseRepository[MatchHistory]):
             )
 
             res = session.scalar(stmt)
-            if self._should_expunge():
+            if res is not None and self._should_expunge():
                 session.expunge(res)
             return res
