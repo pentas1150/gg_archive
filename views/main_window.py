@@ -11,8 +11,8 @@ from PySide6.QtWidgets import (
     QMenu,
     QApplication,
 )
-from PySide6.QtCore import Slot
-from PySide6.QtGui import QAction, QIcon
+from PySide6.QtCore import Slot, QUrl
+from PySide6.QtGui import QAction, QIcon, QDesktopServices
 
 from resources import get_icon_path
 from services.player_service import PlayerService
@@ -123,6 +123,12 @@ class MainWindow(QMainWindow):
         # Help menu
         help_menu = menu_bar.addMenu("도움말(&H)")
 
+        feedback_action = QAction("피드백 보내기(&F)", self)
+        feedback_action.triggered.connect(self._on_feedback)
+        help_menu.addAction(feedback_action)
+
+        help_menu.addSeparator()
+
         about_action = QAction("GG Archive 정보(&A)", self)
         about_action.triggered.connect(self._on_about)
         help_menu.addAction(about_action)
@@ -222,16 +228,19 @@ class MainWindow(QMainWindow):
         self.status_bar.showMessage("AutoSave 리플레이 불러오기 완료", 3000)
 
     @Slot()
+    def _on_feedback(self):
+        """Open feedback/bug report page in browser."""
+        QDesktopServices.openUrl(QUrl(self.settings.bug_report_url))
+
+    @Slot()
     def _on_about(self):
         """Show about dialog."""
         QMessageBox.about(
             self,
             "GG Archive 정보",
             f"GG Archive v{VersionConfig.version}\n\n"
-            "SQLite in-memory 데이터베이스를 사용하는\n"
-            "데스크톱 애플리케이션입니다.\n\n"
-            f"© 2026 GG Archive v{VersionConfig.version}"
-            "Developed by pentas1150"
+            "리플레이 감시 및 백업 애플리케이션입니다.\n\n"
+            f"© 2026 pentas1150"
         )
 
     @Slot()
