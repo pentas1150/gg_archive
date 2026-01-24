@@ -29,6 +29,8 @@ class Settings:
     window_width: int = 750
     window_height: int = 800
 
+    bug_report_url: str = "https://github.com/pentas1150/gg_archive/issues"
+
     @property
     def backup_path(self) -> Path:
         """Full path to the backup database file."""
