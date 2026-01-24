@@ -15,7 +15,7 @@ from database.connection import DatabaseManager
 from database.base import Base
 
 # Import all models to register them with Base
-from models import player, map, stat  # noqa: F401
+from models import player, map, stat, match_history  # noqa: F401
 
 
 @pytest.fixture(scope="session")

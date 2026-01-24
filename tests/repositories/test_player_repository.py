@@ -6,7 +6,6 @@ Uses transaction rollback for test isolation.
 from datetime import datetime, timedelta
 
 import pytest
-from sqlalchemy import update
 
 from common.const import TypeOrderColumn, TypeOrderDirection
 from models.player import Player
@@ -401,6 +400,114 @@ class TestPlayerRepository:
 
         # Then
         assert self.repo.find_by_game_id("ghost") is None
+
+    def test_update_with_stats_updates_last_played_at_only_when_newer(self):
+        """last_played_at은 더 최신값일 때만 업데이트."""
+        # Given: 미래 시간을 사용하여 server_default보다 확실히 나중인 시간으로 테스트
+        self.repo.upsert("player")
+        newer_time = datetime(2099, 12, 1, 12, 0, 0)  # 확실히 미래
+        older_time = datetime(2099, 11, 1, 12, 0, 0)  # newer_time보다 과거
+
+        # When: 먼저 최신 시간으로 업데이트
+        self.repo.update_with_stats("player", is_win=True, last_played_at=newer_time)
+
+        # Then: 최신 시간으로 설정됨
+        player = self.repo.find_by_game_id("player")
+        assert player.last_played_at == newer_time
+
+        # When: 과거 시간으로 업데이트 시도
+        self.repo.update_with_stats("player", is_win=True, last_played_at=older_time)
+
+        # Then: last_played_at은 변경되지 않고 최신 시간 유지, 하지만 게임 수는 증가
+        player = self.repo.find_by_game_id("player")
+        assert player.last_played_at == newer_time  # 여전히 최신 시간
+        assert player.total_games == 2  # 게임 수는 정상적으로 증가
+
+    def test_update_with_stats_updates_last_played_at_when_actually_newer(self):
+        """과거 리플레이 후 최신 리플레이 처리 시 last_played_at 정상 업데이트."""
+        # Given: 미래 시간을 사용 (server_default보다 확실히 나중)
+        oldest = datetime(2099, 9, 1, 12, 0, 0)
+        middle = datetime(2099, 10, 1, 12, 0, 0)
+        newest = datetime(2099, 11, 1, 12, 0, 0)
+
+        self.repo.upsert("player")
+
+        # When: 과거 → 중간 → 최신 순으로 처리
+        self.repo.update_with_stats("player", is_win=True, last_played_at=oldest)
+        player = self.repo.find_by_game_id("player")
+        assert player.last_played_at == oldest
+
+        self.repo.update_with_stats("player", is_win=False, last_played_at=middle)
+        player = self.repo.find_by_game_id("player")
+        assert player.last_played_at == middle
+
+        self.repo.update_with_stats("player", is_win=True, last_played_at=newest)
+        player = self.repo.find_by_game_id("player")
+        assert player.last_played_at == newest
+
+        # Then: 게임 수는 모두 반영
+        assert player.total_games == 3
+        assert player.total_wins == 2
+        assert player.total_losses == 1
+
+    def test_update_with_stats_mixed_order_replays(self):
+        """리플레이가 순서 없이 처리되어도 last_played_at은 항상 최신값 유지."""
+        # Given: 미래 시간 사용 (server_default보다 확실히 나중)
+        time_1 = datetime(2099, 1, 15, 12, 0, 0)
+        time_2 = datetime(2099, 3, 15, 12, 0, 0)
+        time_3 = datetime(2099, 2, 15, 12, 0, 0)  # 중간 시간이 마지막에 처리됨
+
+        self.repo.upsert("player")
+
+        # When: 비순차적으로 처리 (최신 → 가장 오래된 → 중간)
+        self.repo.update_with_stats("player", is_win=True, last_played_at=time_2)  # 최신
+        self.repo.update_with_stats("player", is_win=True, last_played_at=time_1)  # 가장 오래된
+        self.repo.update_with_stats("player", is_win=True, last_played_at=time_3)  # 중간
+
+        # Then: last_played_at은 가장 최신인 time_2 유지
+        player = self.repo.find_by_game_id("player")
+        assert player.last_played_at == time_2
+        assert player.total_games == 3
+
+    def test_update_with_stats_sets_last_played_at_when_null(self):
+        """last_played_at이 NULL일 때 새 값으로 설정."""
+        # Given: 새 플레이어 생성 (last_played_at은 NULL)
+        self.repo.upsert("player")
+        player = self.repo.find_by_game_id("player")
+        assert player.last_played_at is None
+
+        # When: 첫 게임 기록
+        first_time = datetime(2025, 6, 1, 12, 0, 0)
+        self.repo.update_with_stats("player", is_win=True, last_played_at=first_time)
+
+        # Then: last_played_at이 설정됨
+        player = self.repo.find_by_game_id("player")
+        assert player.last_played_at == first_time
+        assert player.total_games == 1
+
+    def test_update_with_stats_preserves_older_time_when_processing_past_replay(self):
+        """이미 최신 시간이 있을 때 과거 리플레이 처리 시 last_played_at 유지."""
+        # Given: 초기 server_default 시간보다 확실히 미래인 시간 사용
+        future_time = datetime(2099, 6, 1, 12, 0, 0)
+        past_time = datetime(2020, 1, 1, 12, 0, 0)  # 현재 시간보다 과거
+
+        self.repo.upsert("player")
+
+        # When: 먼저 미래 시간으로 업데이트
+        self.repo.update_with_stats("player", is_win=True, last_played_at=future_time)
+        player = self.repo.find_by_game_id("player")
+        assert player.last_played_at == future_time
+
+        # When: 과거 시간으로 업데이트 시도
+        self.repo.update_with_stats("player", is_win=False, last_played_at=past_time)
+
+        # Then: last_played_at은 미래 시간 유지
+        player = self.repo.find_by_game_id("player")
+        assert player.last_played_at == future_time
+        # 하지만 게임 수와 패배 수는 정상적으로 증가
+        assert player.total_games == 2
+        assert player.total_wins == 1
+        assert player.total_losses == 1
 
     # =========================================================================
     # update_description 테스트
