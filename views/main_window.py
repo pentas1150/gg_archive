@@ -17,9 +17,11 @@ from PySide6.QtGui import QAction, QIcon
 from resources import get_icon_path
 from services.player_service import PlayerService
 from services.match_history_service import MatchHistoryService
+from services.background.replay_watch_service import ReplayWatchService
 from .settings_widget import SettingsWidget
 from .all_stats_widget import AllStatsWidget
 from .player_detail_widget import PlayerDetailWidget
+from .autosave_replay_dialog import AutoSaveReplayDialog
 from config.settings import Settings
 from config.app_config import AppConfig
 from config.version_config import VersionConfig
@@ -36,6 +38,7 @@ class MainWindow(QMainWindow):
         self,
         player_service: PlayerService | None = None,
         match_history_service: MatchHistoryService | None = None,
+        replay_watch_service: ReplayWatchService | None = None,
         parent=None
     ):
         super().__init__(parent)
@@ -43,6 +46,7 @@ class MainWindow(QMainWindow):
         self.settings = Settings()
         self.player_service = player_service
         self.match_history_service = match_history_service
+        self.replay_watch_service = replay_watch_service
 
         self._setup_ui()
         self._setup_menu_bar()
@@ -104,6 +108,10 @@ class MainWindow(QMainWindow):
         backup_action.setShortcut("Ctrl+S")
         backup_action.triggered.connect(self._on_backup_now)
         file_menu.addAction(backup_action)
+
+        autosave_import_action = QAction("AutoSave 리플레이 불러오기(&A)", self)
+        autosave_import_action.triggered.connect(self._on_autosave_import)
+        file_menu.addAction(autosave_import_action)
 
         file_menu.addSeparator()
 
@@ -195,6 +203,23 @@ class MainWindow(QMainWindow):
     def _on_backup_now(self):
         """Handle manual backup request."""
         self.status_bar.showMessage("백업 중...")
+
+    @Slot()
+    def _on_autosave_import(self):
+        """Handle AutoSave replay import request."""
+        if not self.replay_watch_service:
+            # Create a temporary replay watch service if not provided
+            self.replay_watch_service = ReplayWatchService()
+
+        dialog = AutoSaveReplayDialog(self.replay_watch_service, self)
+        dialog.import_completed.connect(self._on_autosave_import_completed)
+        dialog.exec()
+
+    @Slot()
+    def _on_autosave_import_completed(self):
+        """Handle AutoSave replay import completion."""
+        self._load_and_show_stats()
+        self.status_bar.showMessage("AutoSave 리플레이 불러오기 완료", 3000)
 
     @Slot()
     def _on_about(self):

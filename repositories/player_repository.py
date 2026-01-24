@@ -6,6 +6,7 @@ from sqlalchemy import (
     select,
     update,
     cast,
+    case,
     Float
 )
 
@@ -102,7 +103,11 @@ class PlayerRepository(BaseRepository[Player]):
                         / cast(new_total_games, Float)
                         * 100.0
                     ),
-                    last_played_at=last_played_at,
+                    last_played_at=case(
+                        (Player.last_played_at.is_(None), last_played_at),
+                        (Player.last_played_at < last_played_at, last_played_at),
+                        else_=Player.last_played_at
+                    ),
                     updated_at=func.now()
                 )
                 .prefix_with("/* PlayerRepository.update_with_stats */")

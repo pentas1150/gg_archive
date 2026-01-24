@@ -7,6 +7,8 @@ from watchdog.events import FileSystemEventHandler
 
 from common.event_bus import EventBus
 from common.uow.replay_watch import replay_watch_uow
+from common.const import TypeErrorCode
+from common.exceptions import ReplayAnalysisError
 
 from models.player import Player
 from models.map import Map
@@ -90,31 +92,29 @@ class ReplayWatchService(QObject):
             self._observer = None
             print("[ReplayWatchService] Stopped watching")
 
-    def analyze_replay_and_upsert(self, replay_file: Path) -> MatchHistoryDTO | None:
+    def analyze_replay_and_upsert(self, replay_file: Path) -> MatchHistoryDTO:
         with replay_watch_uow() as uow:
-            analysis_info: ReplayAnalysisDTO | None = uow.replay_service.analyze_replay(replay_file, self.app_config.player_id)
-            if analysis_info is None:
-                print(f"[ReplayWatchService] Failed to analyze replay: {replay_file}")
-                return None
+            analysis_info: ReplayAnalysisDTO = uow.replay_service.analyze_replay(replay_file, self.app_config.player_id)
 
             opponent_player: Player | None = uow.players.upsert(analysis_info.opponent_id)
             if opponent_player is None:
                 print(f"[ReplayWatchService] Failed to upsert opponent player: {analysis_info.opponent_id}")
-                return None
+                raise ReplayAnalysisError(TypeErrorCode.PLAYER_UPSERT_FAILED, analysis_info.opponent_id)
+
             res = uow.players.update_with_stats(analysis_info.opponent_id, analysis_info.is_win, analysis_info.played_at)
             if res == 0:
-                print(f"[ReplayWatchService] Failed to update with stats: {analysis_info.opponent_id} {analysis_info.is_win} {analysis_info.played_at}")
-                return None
+                print(f"[ReplayWatchService] Failed to update with stats: {analysis_info.opponent_id}")
+                raise ReplayAnalysisError(TypeErrorCode.PLAYER_UPDATE_FAILED, analysis_info.opponent_id)
 
             game_map: Map | None = uow.maps.upsert(analysis_info.map_name)
             if game_map is None:
                 print(f"[ReplayWatchService] Failed to upsert game map: {analysis_info.map_name}")
-                return None
+                raise ReplayAnalysisError(TypeErrorCode.MAP_UPSERT_FAILED, analysis_info.map_name)
 
             stat_res: int = uow.stats.upsert(analysis_info.opponent_id, analysis_info.map_name, analysis_info.is_win)
             if stat_res == 0:
-                print(f"[ReplayWatchService] Failed to upsert stat: {analysis_info.opponent_id} {analysis_info.map_name} {analysis_info.is_win}")
-                return None
+                print(f"[ReplayWatchService] Failed to upsert stat: {analysis_info.opponent_id} {analysis_info.map_name}")
+                raise ReplayAnalysisError(TypeErrorCode.STAT_UPSERT_FAILED, f"{analysis_info.opponent_id} / {analysis_info.map_name}")
 
             match_history: MatchHistory | None = uow.match_histories.insert(
                 MatchHistory(
@@ -129,8 +129,8 @@ class ReplayWatchService(QObject):
                 )
             )
             if match_history is None:
-                print(f"[ReplayWatchService] Failed to insert match history: {analysis_info.opponent_id} {analysis_info.map_name} {analysis_info.is_win} {analysis_info.playtime} {analysis_info.played_at}")
-                return None
+                print(f"[ReplayWatchService] Duplicate match history: {analysis_info.opponent_id} {analysis_info.played_at}")
+                raise ReplayAnalysisError(TypeErrorCode.DUPLICATE, f"{analysis_info.opponent_id}")
 
             return MatchHistoryDTO(
                 opponent_id=analysis_info.opponent_id,
@@ -147,9 +147,11 @@ class ReplayWatchService(QObject):
             print(f"[ReplayWatchService] {last_replay_file} not found")
             return
 
-        match_history = self.analyze_replay_and_upsert(last_replay_file)
-        if match_history is None:
-            print(f"[ReplayWatchService] Failed to analyze replay: {last_replay_file}")
+        try:
+            match_history = self.analyze_replay_and_upsert(last_replay_file)
+        except Exception as e:
+            print(f"[ReplayWatchService] Failed to analyze replay: {last_replay_file} {e}")
+            self.event_bus.replay_processing_error.emit(f"{last_replay_file}: {e}")
             return
 
         # Emit event to update the UI
