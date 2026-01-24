@@ -183,7 +183,7 @@ class ReplayService:
             )
 
         is_win = self.is_player_win(data, players, my_name)
-        played_at = datetime.fromisoformat(header["StartTime"]).replace(tzinfo=UTC)
+        played_at = datetime.fromisoformat(header["StartTime"]).astimezone(UTC)
 
         return ReplayAnalysisDTO(
             opponent_id=[p["name"] for p in players if p["name"] != my_name][0],
