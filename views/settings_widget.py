@@ -319,9 +319,8 @@ class SettingsWidget(QWidget):
             self.replay_dir_input.setFocus()
             return
         replay_dir = Path(replay_dir_str)
-        replay_file = replay_dir / "LastReplay.rep"
-        if not replay_dir.exists() or not replay_file.exists():
-            QMessageBox.warning(self, "경고", "리플레이 디렉토리 또는 리플레이 파일이 존재하지 않습니다.")
+        if not replay_dir.exists():
+            QMessageBox.warning(self, "경고", "리플레이 디렉토리가 존재하지 않습니다.")
             self.replay_dir_input.setFocus()
             return
 
