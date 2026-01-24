@@ -1,6 +1,7 @@
 from typing import Type, Optional
 
 from sqlalchemy import select
+from sqlalchemy.dialects.sqlite import insert
 
 from common.const import TypeOrderColumn, TypeOrderDirection
 
@@ -72,6 +73,7 @@ class MatchHistoryRepository(BaseRepository[MatchHistory]):
                 select(MatchHistory)
                 .where(MatchHistory.player_id == player_id)
                 .order_by(primary_column, secondary_column)
+                .prefix_with("/* MatchHistoryRepository.find_all_by_player_with_order */")
             )
             results = session.scalars(stmt).all()
             if self._should_expunge():
@@ -81,8 +83,26 @@ class MatchHistoryRepository(BaseRepository[MatchHistory]):
 
     def insert(self, match_history: MatchHistory) -> Optional[MatchHistory]:
         with self._get_session() as session:
-            session.add(match_history)
-            session.flush()
+            stmt = (
+                insert(MatchHistory)
+                .values(
+                    player_id=match_history.player_id,
+                    opponent_id=match_history.opponent_id,
+                    race=match_history.race,
+                    map_id=match_history.map_id,
+                    map_name=match_history.map_name,
+                    is_win=match_history.is_win,
+                    playtime=match_history.playtime,
+                    played_at=match_history.played_at
+                )
+                .on_conflict_do_nothing(
+                    index_elements=[MatchHistory.played_at, MatchHistory.player_id]
+                )
+                .returning(MatchHistory)
+                .prefix_with("/* MatchHistoryRepository.insert */")
+            )
+
+            res = session.scalar(stmt)
             if self._should_expunge():
-                session.expunge(match_history)
-            return match_history
+                session.expunge(res)
+            return res

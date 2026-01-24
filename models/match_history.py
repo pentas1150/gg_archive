@@ -6,7 +6,7 @@ from sqlalchemy import (
     Integer,
     Boolean,
     DateTime,
-    Index
+    UniqueConstraint
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -26,7 +26,7 @@ class MatchHistory(Base, TimestampMixin):
     playtime: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Playtime in seconds")
     played_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
 
-    Index("idx_match_history_played_at", played_at.desc())
+    UniqueConstraint(played_at, player_id, name="uidx_match_history_played_at_player_id")
 
     def __repr__(self) -> str:
         return f"<MatchHistory(id={self.id})>"
