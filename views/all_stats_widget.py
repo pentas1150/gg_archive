@@ -132,9 +132,10 @@ class AllStatsWidget(QWidget):
         # Table
         self.table = QTableWidget()
         self.table.setColumnCount(6)
-        self.table.setHorizontalHeaderLabels([
+        self._header_labels = [
             "Player ID", "Total", "Win", "Lose", "Win Rate", "Last Played At"
-        ])
+        ]
+        self.table.setHorizontalHeaderLabels(self._header_labels)
 
         # Table styling
         self.table.setStyleSheet("""
@@ -184,23 +185,30 @@ class AllStatsWidget(QWidget):
         # Disable Qt internal sorting - we use DB-level sorting
         self.table.setSortingEnabled(False)
 
-        # Column resizing
+        # Column resizing (with space for sort arrows)
         header = self.table.horizontalHeader()
+        # Player ID
         header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
-        self.table.setColumnWidth(0, 120)
-        header.setSectionResizeMode(1, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.ResizeToContents)
+        self.table.setColumnWidth(0, 130)
+        # Total
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
+        self.table.setColumnWidth(1, 80)
+        # Win
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
+        self.table.setColumnWidth(2, 70)
+        # Lose
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
+        self.table.setColumnWidth(3, 70)
+        # Win Rate
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
+        self.table.setColumnWidth(4, 100)
+        # Last Played At - stretch to fill
         header.setSectionResizeMode(5, QHeaderView.ResizeMode.Stretch)
 
-        # Enable sort indicator and handle header clicks
-        header.setSortIndicatorShown(True)
+        # Enable header clicks for sorting
+        header.setSortIndicatorShown(False)  # We use custom arrows in header text
         header.setSectionsClickable(True)
         header.sectionClicked.connect(self._on_header_clicked)
-
-        # Set initial sort indicator
-        header.setSortIndicator(0, Qt.SortOrder.AscendingOrder)
 
         # Row double-click handler for detail page
         self.table.cellDoubleClicked.connect(self._on_row_double_clicked)
@@ -279,17 +287,20 @@ class AllStatsWidget(QWidget):
             self._order_column = order_column
             self._order_direction = TypeOrderDirection.ASC
 
-        # Update sort indicator
-        header = self.table.horizontalHeader()
-        sort_order = (
-            Qt.SortOrder.AscendingOrder
-            if self._order_direction == TypeOrderDirection.ASC
-            else Qt.SortOrder.DescendingOrder
-        )
-        header.setSortIndicator(column_index, sort_order)
+        # Update header labels with arrow
+        self._update_header_arrows(column_index)
 
         # Refresh with new sort
         self._refresh()
+
+    def _update_header_arrows(self, sorted_column: int):
+        """Update header labels to show sort arrow on the sorted column."""
+        arrow = " ▲" if self._order_direction == TypeOrderDirection.ASC else " ▼"
+        for i, label in enumerate(self._header_labels):
+            if i == sorted_column:
+                self.table.horizontalHeaderItem(i).setText(label + arrow)
+            else:
+                self.table.horizontalHeaderItem(i).setText(label)
 
     def _refresh(self):
         """Refresh data from database with current search/sort settings."""

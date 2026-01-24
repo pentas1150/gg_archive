@@ -117,9 +117,10 @@ class PlayerDetailWidget(QWidget):
         # Match history table
         self.table = QTableWidget()
         self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels([
+        self._header_labels = [
             "Race", "Map", "Win", "Play Time", "Played At"
-        ])
+        ]
+        self.table.setHorizontalHeaderLabels(self._header_labels)
 
         # Table styling
         self.table.setStyleSheet("""
@@ -163,22 +164,25 @@ class PlayerDetailWidget(QWidget):
         self.table.setShowGrid(True)
         self.table.setSortingEnabled(False)  # Disable Qt internal sorting, use DB-level sorting
 
-        # Column resizing
+        # Column resizing (with space for sort arrows)
         header = self.table.horizontalHeader()
-        # Race - fixed small width
-        header.setSectionResizeMode(0, QHeaderView.ResizeMode.ResizeToContents)
+        # Race
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        self.table.setColumnWidth(0, 70)
         # Map
         header.setSectionResizeMode(1, QHeaderView.ResizeMode.Interactive)
-        self.table.setColumnWidth(1, 90)
+        self.table.setColumnWidth(1, 100)
         # Win
-        header.setSectionResizeMode(2, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
+        self.table.setColumnWidth(2, 60)
         # PlayTime
-        header.setSectionResizeMode(3, QHeaderView.ResizeMode.ResizeToContents)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
+        self.table.setColumnWidth(3, 100)
         # Played At - stretch to fill
         header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
 
-        # Enable sorting click indicator and header click handler
-        header.setSortIndicatorShown(True)
+        # Enable header clicks for sorting
+        header.setSortIndicatorShown(False)  # We use custom arrows in header text
         header.setSectionsClickable(True)
         header.sectionClicked.connect(self._on_header_clicked)
 
@@ -399,8 +403,7 @@ class PlayerDetailWidget(QWidget):
         self._refresh()
 
     def _update_sort_indicator(self):
-        """Update the sort indicator on the header."""
-        header = self.table.horizontalHeader()
+        """Update header labels to show sort arrow on the sorted column."""
         # Find column index for current order column
         column_index = None
         for idx, col in COLUMN_TO_ORDER.items():
@@ -409,12 +412,16 @@ class PlayerDetailWidget(QWidget):
                 break
 
         if column_index is not None:
-            sort_order = (
-                Qt.SortOrder.AscendingOrder
-                if self._order_direction == TypeOrderDirection.ASC
-                else Qt.SortOrder.DescendingOrder
-            )
-            header.setSortIndicator(column_index, sort_order)
+            self._update_header_arrows(column_index)
+
+    def _update_header_arrows(self, sorted_column: int):
+        """Update header labels to show sort arrow on the sorted column."""
+        arrow = " ▲" if self._order_direction == TypeOrderDirection.ASC else " ▼"
+        for i, label in enumerate(self._header_labels):
+            if i == sorted_column:
+                self.table.horizontalHeaderItem(i).setText(label + arrow)
+            else:
+                self.table.horizontalHeaderItem(i).setText(label)
 
     def _update_edit_state(self):
         """Update UI based on editing state."""

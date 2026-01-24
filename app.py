@@ -1,7 +1,8 @@
 """
 Application class - QApplication setup and lifecycle management.
 """
-from PySide6.QtWidgets import QApplication
+from PySide6.QtWidgets import QApplication, QStyleFactory
+from PySide6.QtGui import QPalette, QColor
 
 from config.settings import Settings
 from database.connection import DatabaseManager
@@ -22,6 +23,28 @@ class Application:
         self.qapp = QApplication(argv)
         self.qapp.setApplicationName("GG Archive")
         self.qapp.setApplicationVersion("1.0.0")
+
+        # Use Fusion style for consistent cross-platform appearance
+        # This ensures CSS styling works properly on macOS
+        self.qapp.setStyle(QStyleFactory.create("Fusion"))
+
+        # Set palette for Fusion style to ensure proper colors
+        palette = QPalette()
+        palette.setColor(QPalette.ColorRole.Window, QColor("#f5f6fa"))
+        palette.setColor(QPalette.ColorRole.WindowText, QColor("#2c3e50"))
+        palette.setColor(QPalette.ColorRole.Base, QColor("#ffffff"))
+        palette.setColor(QPalette.ColorRole.AlternateBase, QColor("#f5f6fa"))
+        palette.setColor(QPalette.ColorRole.Text, QColor("#2c3e50"))
+        palette.setColor(QPalette.ColorRole.Button, QColor("#ecf0f1"))
+        palette.setColor(QPalette.ColorRole.ButtonText, QColor("#2c3e50"))
+        palette.setColor(QPalette.ColorRole.Highlight, QColor("#3498db"))
+        palette.setColor(QPalette.ColorRole.HighlightedText, QColor("#ffffff"))
+        # Dark/Mid colors for spinbox/combobox arrows
+        palette.setColor(QPalette.ColorRole.Dark, QColor("#2c3e50"))
+        palette.setColor(QPalette.ColorRole.Mid, QColor("#7f8c8d"))
+        palette.setColor(QPalette.ColorRole.Light, QColor("#ecf0f1"))
+        palette.setColor(QPalette.ColorRole.Midlight, QColor("#d5dbdb"))
+        self.qapp.setPalette(palette)
 
         # Initialize database manager
         self.db_manager = DatabaseManager.get_instance()
