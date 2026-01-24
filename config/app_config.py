@@ -113,10 +113,10 @@ class AppConfig:
             return False
 
         replay_path = Path(self.replay_dir)
-        if not replay_path.exists() or not self.replay_file.exists():
+        if not replay_path.exists():
             return False
 
-        if self.time_zone not in [tz.value for tz in TypeTimeZone]:
+        if self.time_zone not in TypeTimeZone:
             return False
 
         return True
