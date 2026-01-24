@@ -30,6 +30,7 @@ class Settings:
     window_height: int = 800
 
     bug_report_url: str = "https://github.com/pentas1150/gg_archive/issues"
+    screp_download_url: str = "https://github.com/icza/screp/releases/download/v1.12.16/screp-v1.12.16-windows-amd64.zip"
 
     @property
     def backup_path(self) -> Path:
