@@ -18,7 +18,7 @@ class MatchHistory(Base, TimestampMixin):
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
     player_id: Mapped[int] = mapped_column(ForeignKey("players.id"), nullable=False)
-    opponent_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True)
+    opponent_id: Mapped[str] = mapped_column(String(255), nullable=False)
     race: Mapped[str] = mapped_column(String(10), nullable=False)
     map_id: Mapped[int] = mapped_column(ForeignKey("maps.id"), nullable=False)
     map_name: Mapped[str] = mapped_column(String(255), nullable=False)

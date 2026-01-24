@@ -7,7 +7,8 @@ from sqlalchemy import (
     Integer,
     Float,
     DateTime,
-    Index
+    Index,
+    UniqueConstraint
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -18,7 +19,7 @@ class Player(Base, TimestampMixin):
     __tablename__ = "players"
 
     id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
-    game_id: Mapped[str] = mapped_column(String(255), nullable=False, index=True, unique=True)
+    game_id: Mapped[str] = mapped_column(String(255), nullable=False)
     total_games: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     total_wins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     total_losses: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
@@ -27,6 +28,7 @@ class Player(Base, TimestampMixin):
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     Index("idx_player_last_played_at", last_played_at.desc())
+    UniqueConstraint(game_id, name="uidx_player_game_id")
 
     def __repr__(self) -> str:
         return f"<Player(id={self.id}, game_id='{self.game_id}')>"

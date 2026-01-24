@@ -2,14 +2,18 @@
 Database initialization and migrations.
 
 With SQLAlchemy, schema is automatically created from model definitions.
-This module provides utilities for database initialization.
+This module provides utilities for database initialization and Alembic migrations.
 """
+import logging
+import sys
 from pathlib import Path
 
 from sqlalchemy import text
 
 from .connection import DatabaseManager
 from .base import Base  # noqa: F401
+
+logger = logging.getLogger(__name__)
 
 # SQL 파일 경로
 INIT_SQL_DIR = Path(__file__).parent / "init_sql"
@@ -105,3 +109,181 @@ def vacuum_database() -> None:
     db = DatabaseManager.get_instance()
     with db.session_scope() as session:
         session.execute(text("VACUUM"))
+
+
+# =============================================================================
+# Alembic Migration Functions
+# =============================================================================
+
+def _get_base_path() -> Path:
+    """
+    Get the base path for finding alembic files.
+
+    Handles both normal execution and PyInstaller frozen state.
+    """
+    if getattr(sys, 'frozen', False):
+        # PyInstaller frozen executable - files are in temp directory
+        return Path(sys._MEIPASS)
+    else:
+        # Normal execution - relative to this file
+        return Path(__file__).parent.parent
+
+
+def get_alembic_config(db_path: str | Path | None = None):
+    """
+    Get Alembic configuration.
+
+    Args:
+        db_path: Path to the SQLite database file. If None, uses default from alembic.ini.
+
+    Returns:
+        Configured AlembicConfig object.
+    """
+    from alembic.config import Config as AlembicConfig
+
+    # Get base path (handles PyInstaller frozen state)
+    base_path = _get_base_path()
+    alembic_ini = base_path / "alembic.ini"
+
+    if not alembic_ini.exists():
+        raise FileNotFoundError(f"alembic.ini not found at {alembic_ini}")
+
+    config = AlembicConfig(str(alembic_ini))
+
+    # Set script_location to bundled alembic directory
+    config.set_main_option("script_location", str(base_path / "alembic"))
+
+    # Override database URL if path provided
+    if db_path is not None:
+        db_path = Path(db_path)
+        config.set_main_option("sqlalchemy.url", f"sqlite:///{db_path}")
+
+    return config
+
+
+def run_migrations(db_path: str | Path) -> bool:
+    """
+    Run all pending Alembic migrations on the specified database file.
+
+    This is used to migrate the disk backup file before restoring to memory.
+
+    Args:
+        db_path: Path to the SQLite database file to migrate.
+
+    Returns:
+        True if migrations ran successfully, False otherwise.
+    """
+    from alembic import command
+    from alembic.util.exc import CommandError
+
+    db_path = Path(db_path)
+
+    if not db_path.exists():
+        logger.warning(f"Database file not found: {db_path}")
+        return False
+
+    try:
+        config = get_alembic_config(db_path)
+        command.upgrade(config, "head")
+        logger.info(f"Migrations applied successfully to {db_path}")
+        return True
+    except CommandError as e:
+        logger.error(f"Migration failed: {e}")
+        return False
+    except Exception as e:
+        logger.error(f"Unexpected error during migration: {e}")
+        return False
+
+
+def get_current_revision(db_path: str | Path) -> str | None:
+    """
+    Get the current Alembic revision of a database file.
+
+    Args:
+        db_path: Path to the SQLite database file.
+
+    Returns:
+        Current revision string, or None if no migrations applied.
+    """
+    from alembic.runtime.migration import MigrationContext
+    from sqlalchemy import create_engine
+
+    db_path = Path(db_path)
+
+    if not db_path.exists():
+        return None
+
+    try:
+        engine = create_engine(f"sqlite:///{db_path}")
+        with engine.connect() as conn:
+            context = MigrationContext.configure(conn)
+            return context.get_current_revision()
+    except Exception as e:
+        logger.error(f"Error getting current revision: {e}")
+        return None
+
+
+def stamp_database(db_path: str | Path, revision: str = "head") -> bool:
+    """
+    Stamp the database with a specific revision without running migrations.
+
+    This is useful for marking an existing database as being at a specific version.
+
+    Args:
+        db_path: Path to the SQLite database file.
+        revision: Revision to stamp (default: "head" for latest).
+
+    Returns:
+        True if stamping succeeded, False otherwise.
+    """
+    from alembic import command
+
+    db_path = Path(db_path)
+
+    if not db_path.exists():
+        logger.warning(f"Database file not found: {db_path}")
+        return False
+
+    try:
+        config = get_alembic_config(db_path)
+        command.stamp(config, revision)
+        logger.info(f"Database stamped with revision '{revision}'")
+        return True
+    except Exception as e:
+        logger.error(f"Error stamping database: {e}")
+        return False
+
+
+def check_migrations_needed(db_path: str | Path) -> bool:
+    """
+    Check if there are pending migrations for the database.
+
+    Args:
+        db_path: Path to the SQLite database file.
+
+    Returns:
+        True if migrations are needed, False if up to date.
+    """
+    from alembic.runtime.migration import MigrationContext
+    from alembic.script import ScriptDirectory
+    from sqlalchemy import create_engine
+
+    db_path = Path(db_path)
+
+    if not db_path.exists():
+        return False
+
+    try:
+        config = get_alembic_config(db_path)
+        script = ScriptDirectory.from_config(config)
+        head_revision = script.get_current_head()
+
+        engine = create_engine(f"sqlite:///{db_path}")
+        with engine.connect() as conn:
+            context = MigrationContext.configure(conn)
+            current_revision = context.get_current_revision()
+
+        return current_revision != head_revision
+    except Exception as e:
+        logger.error(f"Error checking migrations: {e}")
+        return False

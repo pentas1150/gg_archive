@@ -9,7 +9,7 @@ from PySide6.QtGui import QPalette, QColor
 
 from config.settings import Settings
 from database.connection import DatabaseManager
-from database.migrations import init_database, seed_test_data
+from database.migrations import init_database, seed_test_data, run_migrations
 from services.background.backup_service import BackupService
 from services.background.replay_watch_service import ReplayWatchService
 from services.player_service import PlayerService
@@ -62,6 +62,8 @@ class Application:
         else:
             # Production: restore from disk backup if exists
             if self.settings.backup_path.exists():
+                # Run Alembic migrations on backup file before restoring
+                self._migrate_backup_database()
                 self.db_manager.restore_from_disk(str(self.settings.backup_path))
             init_database()
 
@@ -137,6 +139,29 @@ class Application:
         dialog = ScrepDownloadDialog()
         dialog.exec()
         return False
+
+    def _migrate_backup_database(self) -> None:
+        """
+        Run Alembic migrations on the backup database file.
+
+        This ensures the backup file schema is up-to-date before
+        restoring it to the in-memory database.
+        """
+        backup_path = self.settings.backup_path
+
+        if not backup_path.exists():
+            return
+
+        try:
+            success = run_migrations(backup_path)
+            if success:
+                print(f"[INFO] Database migrations applied to {backup_path}")
+            else:
+                print("[WARN] No migrations needed or migration check failed")
+        except Exception as e:
+            print(f"[ERROR] Migration failed: {e}")
+            # Continue anyway - the backup will be restored as-is
+            # init_database() will create any missing tables
 
     def _on_exit(self):
         """Cleanup on application exit."""

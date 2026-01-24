@@ -22,6 +22,8 @@ pip install pyinstaller==6.18.0
 echo "Building..."
 pyinstaller --onefile --windowed --name "$APP_NAME" \
     --add-data "resources:resources" \
+    --add-data "alembic:alembic" \
+    --add-data "alembic.ini:." \
     --icon "$ICON_PATH" \
     --collect-all PySide6 \
     --exclude-module tests \
