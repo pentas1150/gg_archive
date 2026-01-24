@@ -26,7 +26,7 @@ class Settings:
     backup_on_exit: bool = True
 
     # UI settings
-    window_width: int = 600
+    window_width: int = 750
     window_height: int = 800
 
     @property
