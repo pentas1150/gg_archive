@@ -7,8 +7,7 @@ from sqlalchemy import (
     Integer,
     Float,
     DateTime,
-    Index,
-    func
+    Index
 )
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -24,7 +23,7 @@ class Player(Base, TimestampMixin):
     total_wins: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     total_losses: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     total_win_rate: Mapped[float] = mapped_column(Float, nullable=False, default=0.0)
-    last_played_at: Mapped[datetime] = mapped_column(DateTime, nullable=False, server_default=func.now())
+    last_played_at: Mapped[Optional[datetime]] = mapped_column(DateTime, nullable=True)
     description: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
 
     Index("idx_player_last_played_at", last_played_at.desc())

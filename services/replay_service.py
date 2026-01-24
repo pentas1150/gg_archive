@@ -8,6 +8,8 @@ from typing import Any, Optional
 
 from dto.replay import ReplayAnalysisDTO
 from config.app_config import AppConfig
+from common.const import TypeErrorCode
+from common.exceptions import ReplayAnalysisError
 
 
 # 게임 속도별 FPS (Fastest가 일반적이지만 방어적으로 전체 포함)
@@ -159,20 +161,26 @@ class ReplayService:
                 return False
         return True
 
-    def analyze_replay(self, rep_path: str, my_name: str) -> ReplayAnalysisDTO | None:
+    def analyze_replay(self, rep_path: str, my_name: str) -> ReplayAnalysisDTO:
         data = self.run_screp(Path(rep_path))
         header = data.get("Header") or data.get("header") or {}
         players = self.players_from_header(header)
+
+        if len(players) != 2:
+            raise ReplayAnalysisError(TypeErrorCode.NOT_1VS1, str(rep_path))
+        if my_name not in [p["name"] for p in players]:
+            raise ReplayAnalysisError(TypeErrorCode.NOT_MY_REPLAY, str(rep_path))
+
         map_name = self.map_from_header(header)
         race = self.opponent_race_from_players(players, my_name)
 
-        if len(players) != 2:
-            raise Exception(f"{rep_path} is not 1vs1 replay")
-
         frames, speed = self.frames_and_speed(data)
         seconds = self.frames_to_seconds(frames, speed) if frames is not None else None
-        if not seconds or seconds < self.app_config.playtime_threshold:  # threshold 안에 들어가지 않으면 skip
-            return None
+        if not seconds or seconds < self.app_config.playtime_threshold:
+            raise ReplayAnalysisError(
+                TypeErrorCode.PLAYTIME_TOO_SHORT,
+                f"{int(seconds) if seconds else 0}초"
+            )
 
         is_win = self.is_player_win(data, players, my_name)
         played_at = datetime.fromisoformat(header["StartTime"]).replace(tzinfo=UTC)
