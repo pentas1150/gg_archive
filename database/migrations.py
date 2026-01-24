@@ -161,11 +161,45 @@ def get_alembic_config(db_path: str | Path | None = None):
     return config
 
 
+def _has_alembic_version_table(db_path: Path) -> bool:
+    """Check if the database has alembic_version table."""
+    from sqlalchemy import create_engine, inspect
+
+    try:
+        engine = create_engine(f"sqlite:///{db_path}")
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        engine.dispose()
+        return "alembic_version" in tables
+    except Exception as e:
+        logger.error(f"Error checking alembic_version table: {e}")
+        return False
+
+
+def _has_app_tables(db_path: Path) -> bool:
+    """Check if the database has application tables (players, maps, etc.)."""
+    from sqlalchemy import create_engine, inspect
+
+    try:
+        engine = create_engine(f"sqlite:///{db_path}")
+        inspector = inspect(engine)
+        tables = inspector.get_table_names()
+        engine.dispose()
+        # Check for core app tables
+        app_tables = {"players", "maps", "match_histories", "stats"}
+        return bool(app_tables & set(tables))
+    except Exception as e:
+        logger.error(f"Error checking app tables: {e}")
+        return False
+
+
 def run_migrations(db_path: str | Path) -> bool:
     """
     Run all pending Alembic migrations on the specified database file.
 
     This is used to migrate the disk backup file before restoring to memory.
+    Handles legacy databases that were created before Alembic was introduced
+    by stamping them with the current revision instead of running migrations.
 
     Args:
         db_path: Path to the SQLite database file to migrate.
@@ -183,6 +217,22 @@ def run_migrations(db_path: str | Path) -> bool:
         return False
 
     try:
+        # Check if this is a legacy database (has app tables but no alembic_version)
+        has_alembic = _has_alembic_version_table(db_path)
+        has_tables = _has_app_tables(db_path)
+
+        if not has_alembic and has_tables:
+            # Legacy database: stamp with current head instead of migrating
+            logger.info(
+                "Legacy database detected (no alembic_version). "
+                "Stamping with current revision."
+            )
+            config = get_alembic_config(db_path)
+            command.stamp(config, "head")
+            logger.info(f"Database stamped successfully: {db_path}")
+            return True
+
+        # Normal case: run migrations
         config = get_alembic_config(db_path)
         command.upgrade(config, "head")
         logger.info(f"Migrations applied successfully to {db_path}")
