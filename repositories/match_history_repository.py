@@ -24,7 +24,7 @@ class MatchHistoryRepository(BaseRepository[MatchHistory]):
         Returns:
             정렬된 MatchHistory 리스트
         """
-        if order_by not in TypeOrderColumn:
+        if not isinstance(order_by, TypeOrderColumn):
             raise ValueError(f"Invalid order by: {order_by}")
 
         primary_column = (
@@ -58,7 +58,7 @@ class MatchHistoryRepository(BaseRepository[MatchHistory]):
         Returns:
             정렬된 MatchHistory 리스트
         """
-        if order_by not in TypeOrderColumn:
+        if not isinstance(order_by, TypeOrderColumn):
             raise ValueError(f"Invalid order by: {order_by}")
 
         primary_column = (
