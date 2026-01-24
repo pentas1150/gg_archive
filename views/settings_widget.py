@@ -21,6 +21,7 @@ from PySide6.QtCore import Signal
 from common.const import TypeTimeZone
 
 from config.app_config import AppConfig
+from resources import get_icon_path
 
 
 class SettingsWidget(QWidget):
@@ -83,62 +84,57 @@ class SettingsWidget(QWidget):
             }
         """
 
+        # Arrow icon paths for SpinBox and ComboBox (absolute path, forward slashes for QSS url())
+        _arrow_up = get_icon_path("arrow_up.svg").resolve().as_posix()
+        _arrow_down = get_icon_path("arrow_down.svg").resolve().as_posix()
+
         # Common style for inputs
-        input_style = """
-            QLineEdit, QSpinBox, QComboBox {
+        input_style = f"""
+            QLineEdit, QSpinBox, QComboBox {{
                 font-size: 14px;
                 padding: 8px 12px;
                 border: 1px solid #bdc3c7;
                 border-radius: 4px;
                 background: white;
                 color: #2c3e50;
-            }
-            QLineEdit:focus, QSpinBox:focus, QComboBox:focus {
+            }}
+            QLineEdit:focus, QSpinBox:focus, QComboBox:focus {{
                 border: 2px solid #3498db;
-            }
-            QSpinBox::up-button, QSpinBox::down-button {
+            }}
+            QSpinBox::up-button, QSpinBox::down-button {{
                 background: #ecf0f1;
                 border: 1px solid #bdc3c7;
                 width: 20px;
-            }
-            QSpinBox::up-button:hover, QSpinBox::down-button:hover {
+            }}
+            QSpinBox::up-button:hover, QSpinBox::down-button:hover {{
                 background: #d5dbdb;
-            }
-            QSpinBox::up-arrow {
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-bottom: 5px solid #2c3e50;
-                width: 0;
-                height: 0;
-            }
-            QSpinBox::down-arrow {
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 5px solid #2c3e50;
-                width: 0;
-                height: 0;
-            }
-            QComboBox::drop-down {
+            }}
+            QSpinBox::up-arrow {{
+                image: url({_arrow_up});
+                width: 10px;
+                height: 10px;
+            }}
+            QSpinBox::down-arrow {{
+                image: url({_arrow_down});
+                width: 10px;
+                height: 10px;
+            }}
+            QComboBox::drop-down {{
                 border: none;
                 width: 30px;
-            }
-            QComboBox::down-arrow {
-                image: none;
-                border-left: 5px solid transparent;
-                border-right: 5px solid transparent;
-                border-top: 5px solid #2c3e50;
-                width: 0;
-                height: 0;
-            }
-            QComboBox QAbstractItemView {
+            }}
+            QComboBox::down-arrow {{
+                image: url({_arrow_down});
+                width: 10px;
+                height: 10px;
+            }}
+            QComboBox QAbstractItemView {{
                 background: white;
                 color: #2c3e50;
                 selection-background-color: #3498db;
                 selection-color: white;
                 border: 1px solid #bdc3c7;
-            }
+            }}
         """
 
         # Player ID
