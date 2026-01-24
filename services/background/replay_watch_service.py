@@ -90,36 +90,31 @@ class ReplayWatchService(QObject):
             self._observer = None
             print("[ReplayWatchService] Stopped watching")
 
-    def _on_last_replay_file_changed(self):
-        last_replay_file = self.app_config.replay_file
-        if not last_replay_file.exists():
-            print(f"[ReplayWatchService] {last_replay_file} not found")
-            return
-
+    def analyze_replay_and_upsert(self, replay_file: Path) -> MatchHistoryDTO | None:
         with replay_watch_uow() as uow:
-            analysis_info: ReplayAnalysisDTO | None = uow.replay_service.analyze_replay(last_replay_file, self.app_config.player_id)
+            analysis_info: ReplayAnalysisDTO | None = uow.replay_service.analyze_replay(replay_file, self.app_config.player_id)
             if analysis_info is None:
-                print(f"[ReplayWatchService] Failed to analyze replay: {last_replay_file}")
-                return
+                print(f"[ReplayWatchService] Failed to analyze replay: {replay_file}")
+                return None
 
             opponent_player: Player | None = uow.players.upsert(analysis_info.opponent_id)
             if opponent_player is None:
                 print(f"[ReplayWatchService] Failed to upsert opponent player: {analysis_info.opponent_id}")
-                return
+                return None
             res = uow.players.update_with_stats(analysis_info.opponent_id, analysis_info.is_win, analysis_info.played_at)
             if res == 0:
                 print(f"[ReplayWatchService] Failed to update with stats: {analysis_info.opponent_id} {analysis_info.is_win} {analysis_info.played_at}")
-                return
+                return None
 
             game_map: Map | None = uow.maps.upsert(analysis_info.map_name)
             if game_map is None:
                 print(f"[ReplayWatchService] Failed to upsert game map: {analysis_info.map_name}")
-                return
+                return None
 
             stat_res: int = uow.stats.upsert(analysis_info.opponent_id, analysis_info.map_name, analysis_info.is_win)
             if stat_res == 0:
                 print(f"[ReplayWatchService] Failed to upsert stat: {analysis_info.opponent_id} {analysis_info.map_name} {analysis_info.is_win}")
-                return
+                return None
 
             match_history: MatchHistory | None = uow.match_histories.insert(
                 MatchHistory(
@@ -135,14 +130,27 @@ class ReplayWatchService(QObject):
             )
             if match_history is None:
                 print(f"[ReplayWatchService] Failed to insert match history: {analysis_info.opponent_id} {analysis_info.map_name} {analysis_info.is_win} {analysis_info.playtime} {analysis_info.played_at}")
-                return
+                return None
 
-            # Emit event to update the UI
-            self.event_bus.replay_added.emit(MatchHistoryDTO(
-                opponent_id=match_history.opponent_id,
-                race=match_history.race,
-                map_name=match_history.map_name,
-                is_win=match_history.is_win,
-                playtime=match_history.playtime,
-                played_at=match_history.played_at
-            ))
+            return MatchHistoryDTO(
+                opponent_id=analysis_info.opponent_id,
+                race=analysis_info.race,
+                map_name=analysis_info.map_name,
+                is_win=analysis_info.is_win,
+                playtime=analysis_info.playtime,
+                played_at=analysis_info.played_at
+            )
+
+    def _on_last_replay_file_changed(self):
+        last_replay_file = self.app_config.replay_file
+        if not last_replay_file.exists():
+            print(f"[ReplayWatchService] {last_replay_file} not found")
+            return
+
+        match_history = self.analyze_replay_and_upsert(last_replay_file)
+        if match_history is None:
+            print(f"[ReplayWatchService] Failed to analyze replay: {last_replay_file}")
+            return
+
+        # Emit event to update the UI
+        self.event_bus.replay_added.emit(match_history)
