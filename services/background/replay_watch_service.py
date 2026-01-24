@@ -123,6 +123,8 @@ class ReplayWatchService(QObject):
                     race=analysis_info.race,
                     map_id=game_map.id,
                     map_name=analysis_info.map_name,
+                    apm=analysis_info.apm,
+                    eapm=analysis_info.eapm,
                     is_win=analysis_info.is_win,
                     playtime=analysis_info.playtime,
                     played_at=analysis_info.played_at
@@ -136,6 +138,8 @@ class ReplayWatchService(QObject):
                 opponent_id=analysis_info.opponent_id,
                 race=analysis_info.race,
                 map_name=analysis_info.map_name,
+                apm=analysis_info.apm,
+                eapm=analysis_info.eapm,
                 is_win=analysis_info.is_win,
                 playtime=analysis_info.playtime,
                 played_at=analysis_info.played_at

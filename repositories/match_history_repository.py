@@ -85,16 +85,7 @@ class MatchHistoryRepository(BaseRepository[MatchHistory]):
         with self._get_session() as session:
             stmt = (
                 insert(MatchHistory)
-                .values(
-                    player_id=match_history.player_id,
-                    opponent_id=match_history.opponent_id,
-                    race=match_history.race,
-                    map_id=match_history.map_id,
-                    map_name=match_history.map_name,
-                    is_win=match_history.is_win,
-                    playtime=match_history.playtime,
-                    played_at=match_history.played_at
-                )
+                .values(**match_history.to_dict())
                 .on_conflict_do_nothing(
                     index_elements=[MatchHistory.played_at, MatchHistory.player_id]
                 )

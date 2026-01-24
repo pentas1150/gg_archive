@@ -6,6 +6,8 @@ class MatchHistoryDTO(BaseModel):
     opponent_id: str = Field(description="Opponent ID")
     race: str = Field(description="Race")
     map_name: str = Field(description="Map Name")
+    apm: int = Field(description="APM")
+    eapm: int = Field(description="EAPM")
     is_win: bool = Field(description="Is Win")
     playtime: int = Field(description="Playtime")
     played_at: datetime = Field(description="Played At")

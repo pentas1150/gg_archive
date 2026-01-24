@@ -173,6 +173,9 @@ class ReplayService:
 
         map_name = self.map_from_header(header)
         race = self.opponent_race_from_players(players, my_name)
+        opponent_pid = [p["pid"] for p in players if p["name"] != my_name][0]
+        opponent_apm = [p["APM"] for p in data["Computed"]["PlayerDescs"] if p["PlayerID"] == opponent_pid][0]
+        opponent_eapm = [p["EAPM"] for p in data["Computed"]["PlayerDescs"] if p["PlayerID"] == opponent_pid][0]
 
         frames, speed = self.frames_and_speed(data)
         seconds = self.frames_to_seconds(frames, speed) if frames is not None else None
@@ -189,6 +192,8 @@ class ReplayService:
             opponent_id=[p["name"] for p in players if p["name"] != my_name][0],
             race=race,
             map_name=map_name,
+            apm=opponent_apm,
+            eapm=opponent_eapm,
             is_win=is_win,
             playtime=int(seconds),
             played_at=played_at

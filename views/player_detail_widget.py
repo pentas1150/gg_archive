@@ -33,8 +33,8 @@ COLUMN_TO_ORDER = {
     0: TypeOrderColumn.RACE,
     1: TypeOrderColumn.MAP_NAME,
     2: TypeOrderColumn.IS_WIN,
-    3: TypeOrderColumn.PLAYTIME,
-    4: TypeOrderColumn.PLAYED_AT,
+    5: TypeOrderColumn.PLAYTIME,
+    6: TypeOrderColumn.PLAYED_AT,
 }
 
 
@@ -116,10 +116,10 @@ class PlayerDetailWidget(QWidget):
 
         # Match history table
         self.table = QTableWidget()
-        self.table.setColumnCount(5)
         self._header_labels = [
-            "Race", "Map", "Win", "Play Time", "Played At"
+            "Race", "Map", "Win", "APM", "EAPM", "Play Time", "Played At"
         ]
+        self.table.setColumnCount(len(self._header_labels))
         self.table.setHorizontalHeaderLabels(self._header_labels)
 
         # Table styling
@@ -175,11 +175,17 @@ class PlayerDetailWidget(QWidget):
         # Win
         header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
         self.table.setColumnWidth(2, 60)
-        # PlayTime
+        # APM
         header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
-        self.table.setColumnWidth(3, 100)
+        self.table.setColumnWidth(3, 60)
+        # EAPM
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
+        self.table.setColumnWidth(4, 60)
+        # PlayTime
+        header.setSectionResizeMode(5, QHeaderView.ResizeMode.Interactive)
+        self.table.setColumnWidth(5, 100)
         # Played At - stretch to fill
-        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Stretch)
+        header.setSectionResizeMode(6, QHeaderView.ResizeMode.Stretch)
 
         # Enable header clicks for sorting
         header.setSortIndicatorShown(False)  # We use custom arrows in header text
@@ -350,6 +356,18 @@ class PlayerDetailWidget(QWidget):
                 win_item.setForeground(lose_color)
             self.table.setItem(row, 2, win_item)
 
+            # APM
+            apm_item = NumericTableWidgetItem(history.apm)
+            apm_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            apm_item.setForeground(default_color)
+            self.table.setItem(row, 3, apm_item)
+
+            # EAPM
+            eapm_item = NumericTableWidgetItem(history.eapm)
+            eapm_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
+            eapm_item.setForeground(default_color)
+            self.table.setItem(row, 4, eapm_item)
+
             # PlayTime (mm:ss format)
             minutes = history.playtime // 60
             seconds = history.playtime % 60
@@ -357,7 +375,7 @@ class PlayerDetailWidget(QWidget):
             playtime_item = NumericTableWidgetItem(history.playtime, playtime_str)
             playtime_item.setTextAlignment(Qt.AlignmentFlag.AlignCenter)
             playtime_item.setForeground(default_color)
-            self.table.setItem(row, 3, playtime_item)
+            self.table.setItem(row, 5, playtime_item)
 
             # Played At
             if history.played_at:
@@ -378,7 +396,7 @@ class PlayerDetailWidget(QWidget):
                 timestamp = 0
             played_at_item = NumericTableWidgetItem(timestamp, played_at)
             played_at_item.setForeground(default_color)
-            self.table.setItem(row, 4, played_at_item)
+            self.table.setItem(row, 6, played_at_item)
 
             # Set row height
             self.table.setRowHeight(row, 28)
@@ -417,11 +435,11 @@ class PlayerDetailWidget(QWidget):
     def _update_header_arrows(self, sorted_column: int):
         """Update header labels to show sort arrow on the sorted column."""
         arrow = " ▲" if self._order_direction == TypeOrderDirection.ASC else " ▼"
-        for i, label in enumerate(self._header_labels):
-            if i == sorted_column:
-                self.table.horizontalHeaderItem(i).setText(label + arrow)
-            else:
-                self.table.horizontalHeaderItem(i).setText(label)
+        for i in range(self.table.columnCount()):
+            label = self._header_labels[i] if i < len(self._header_labels) else ""
+            item = self.table.horizontalHeaderItem(i)
+            if item is not None:
+                item.setText((label + arrow) if i == sorted_column else label)
 
     def _update_edit_state(self):
         """Update UI based on editing state."""
