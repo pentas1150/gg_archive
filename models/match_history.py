@@ -22,6 +22,8 @@ class MatchHistory(Base, TimestampMixin):
     race: Mapped[str] = mapped_column(String(10), nullable=False)
     map_id: Mapped[int] = mapped_column(ForeignKey("maps.id"), nullable=False)
     map_name: Mapped[str] = mapped_column(String(255), nullable=False)
+    apm: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    eapm: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
     is_win: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     playtime: Mapped[int] = mapped_column(Integer, nullable=False, default=0, comment="Playtime in seconds")
     played_at: Mapped[datetime] = mapped_column(DateTime, nullable=False)
