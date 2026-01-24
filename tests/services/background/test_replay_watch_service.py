@@ -65,6 +65,8 @@ class TestAnalyzeReplayAndUpsert:
             opponent_id="opponent_player",
             race="Terran",
             map_name="Fighting Spirit",
+            apm=150,
+            eapm=120,
             is_win=True,
             playtime=600,
             played_at=datetime.now(UTC)
@@ -86,6 +88,8 @@ class TestAnalyzeReplayAndUpsert:
             race="Terran",
             map_id=1,
             map_name="Fighting Spirit",
+            apm=150,
+            eapm=120,
             is_win=True,
             playtime=600,
             played_at=sample_analysis_dto.played_at
@@ -107,6 +111,8 @@ class TestAnalyzeReplayAndUpsert:
             assert result.opponent_id == "opponent_player"
             assert result.race == "Terran"
             assert result.map_name == "Fighting Spirit"
+            assert result.apm == 150
+            assert result.eapm == 120
             assert result.is_win is True
             assert result.playtime == 600
 
@@ -289,6 +295,8 @@ class TestAnalyzeReplayAndUpsert:
             race="Zerg",
             map_id=game_map.id,
             map_name=game_map.name,
+            apm=150,
+            eapm=120,
             is_win=True,
             playtime=300,
             played_at=played_at
@@ -302,6 +310,8 @@ class TestAnalyzeReplayAndUpsert:
             race="Terran",
             map_id=game_map.id,
             map_name=game_map.name,
+            apm=160,
+            eapm=130,
             is_win=False,
             playtime=400,
             played_at=played_at  # 동일한 시간 = 중복
@@ -331,6 +341,8 @@ class TestAnalyzeReplayAndUpsert:
                 opponent_id="test",
                 race="Terran",
                 map_name="Test Map",
+                apm=150,
+                eapm=120,
                 is_win=True,
                 playtime=600,
                 played_at=datetime.now(UTC)
@@ -361,6 +373,8 @@ class TestAnalyzeReplayAndUpsert:
                 race="Terran",
                 map_id=1,
                 map_name="Test Map",
+                apm=150,
+                eapm=120,
                 is_win=True,
                 playtime=600,
                 played_at=datetime.now(UTC)
@@ -477,6 +491,8 @@ class TestAnalyzeReplayAndUpsertIntegration:
             race="Protoss",
             map_id=game_map.id,
             map_name=game_map.name,
+            apm=150,
+            eapm=120,
             is_win=True,
             playtime=500,
             played_at=played_at
@@ -502,6 +518,8 @@ class TestAnalyzeReplayAndUpsertIntegration:
             race="Terran",
             map_id=game_map.id,
             map_name=game_map.name,
+            apm=150,
+            eapm=120,
             is_win=True,
             playtime=300,
             played_at=played_at
@@ -515,6 +533,8 @@ class TestAnalyzeReplayAndUpsertIntegration:
             race="Zerg",  # 다른 종족
             map_id=game_map.id,
             map_name=game_map.name,
+            apm=160,
+            eapm=130,
             is_win=False,  # 다른 결과
             playtime=600,  # 다른 시간
             played_at=played_at  # 같은 played_at
