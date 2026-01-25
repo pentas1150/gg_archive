@@ -10,6 +10,7 @@ from dto.replay import ReplayAnalysisDTO
 from config.app_config import AppConfig
 from common.const import TypeErrorCode
 from common.exceptions import ReplayAnalysisError
+from common.logger import get_logger
 
 
 # 게임 속도별 FPS (Fastest가 일반적이지만 방어적으로 전체 포함)
@@ -27,6 +28,7 @@ FPS_BY_SPEED: dict[str, float] = {
 class ReplayService:
     def __init__(self):
         self.app_config = AppConfig.get_instance()
+        self.logger = get_logger("replay_service")
 
     def _safe_decode(self, b: bytes) -> str:
         '''
@@ -58,7 +60,7 @@ class ReplayService:
         env.setdefault("LC_ALL", "C.UTF-8")
         env.setdefault("LANG", "C.UTF-8")
 
-        print(f"[ReplayService] Running screp: {self.app_config.screp_path} {str(rep_path)}")
+        self.logger.info(f"Running screp: {self.app_config.screp_path} {str(rep_path)}")
 
         proc = subprocess.run(
             [self.app_config.screp_path, str(rep_path)],
