@@ -57,6 +57,7 @@ class TestAnalyzeReplayAndUpsert:
             self.service.app_config = MagicMock()
             self.service.app_config.player_id = "my_player"
             self.service.event_bus = MagicMock()
+            self.service.logger = MagicMock()  # Mock logger for tests
 
     @pytest.fixture
     def sample_analysis_dto(self):
