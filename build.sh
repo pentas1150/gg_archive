@@ -24,6 +24,7 @@ pyinstaller --onefile --windowed --name "$APP_NAME" \
     --add-data "resources:resources" \
     --add-data "alembic:alembic" \
     --add-data "alembic.ini:." \
+    --add-data "licenses:licenses" \
     --icon "$ICON_PATH" \
     --collect-all PySide6 \
     --collect-all watchdog \
