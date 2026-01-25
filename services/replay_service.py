@@ -151,13 +151,16 @@ class ReplayService:
         for cmd in root['Computed']['LeaveGameCmds']:
             reason_type = cmd['Reason']['Name']
             if reason_type == 'Quit':
-                lose_player_id = cmd['Reason']['ID']
+                lose_player_id = cmd.get('PlayerID', None)
                 break
         else:
             raise Exception('No find losing player')
 
+        if lose_player_id is None:
+            raise Exception('No find losing player')
+
         for p in players:
-            if p['raw']['ID'] == lose_player_id and p['name'] == my_name:
+            if p['pid'] == lose_player_id and p['name'] == my_name:
                 return False
         return True
 
