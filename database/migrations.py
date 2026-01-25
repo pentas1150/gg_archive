@@ -4,7 +4,6 @@ Database initialization and migrations.
 With SQLAlchemy, schema is automatically created from model definitions.
 This module provides utilities for database initialization and Alembic migrations.
 """
-import logging
 import sys
 from pathlib import Path
 
@@ -12,8 +11,9 @@ from sqlalchemy import text
 
 from .connection import DatabaseManager
 from .base import Base  # noqa: F401
+from common.logger import get_logger
 
-logger = logging.getLogger(__name__)
+logger = get_logger("migrations")
 
 # SQL 파일 경로
 INIT_SQL_DIR = Path(__file__).parent / "init_sql"
@@ -56,7 +56,7 @@ def seed_test_data() -> None:
     test_data_file = INIT_SQL_DIR / "test_data.sql"
 
     if not test_data_file.exists():
-        print(f"[DEV] Test data file not found: {test_data_file}")
+        logger.warning(f"Test data file not found: {test_data_file}")
         return
 
     db = DatabaseManager.get_instance()
@@ -73,10 +73,10 @@ def seed_test_data() -> None:
                 try:
                     session.execute(text(cleaned))
                 except Exception as e:
-                    print(f"[DEV] Error executing SQL: {e}")
-                    print(f"[DEV] Statement: {cleaned[:100]}...")
+                    logger.error(f"Error executing SQL: {e}")
+                    logger.error(f"Statement: {cleaned[:100]}...")
 
-    print("[DEV] Test data seeded successfully!")
+    logger.info("Test data seeded successfully!")
 
 
 def reset_database() -> None:

@@ -37,6 +37,11 @@ class Settings:
         """Full path to the backup database file."""
         return self.data_dir / self.db_filename
 
+    @property
+    def log_file_path(self) -> Path:
+        """Full path to the log file."""
+        return self.data_dir / "logs" / "gg_archive.log"
+
     def update(self, **kwargs):
         """Update settings with provided values."""
         for key, value in kwargs.items():

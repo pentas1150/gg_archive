@@ -8,6 +8,7 @@ from PySide6.QtWidgets import QApplication, QStyleFactory
 from PySide6.QtGui import QPalette, QColor
 
 from config.settings import Settings
+from common.logger import setup_logger, get_logger
 from database.connection import DatabaseManager
 from database.migrations import init_database, seed_test_data, run_migrations
 from services.background.backup_service import BackupService
@@ -24,6 +25,11 @@ class Application:
     def __init__(self, argv: list, dev_mode: bool = False):
         self.dev_mode = dev_mode
         self.settings = Settings()
+
+        # Initialize logger with settings
+        setup_logger(self.settings.log_file_path)
+        self.logger = get_logger("app")
+
         self.qapp = QApplication(argv)
         self.qapp.setApplicationName("GG Archive")
         self.qapp.setApplicationVersion("1.0.0")
@@ -55,8 +61,8 @@ class Application:
 
         # Dev mode: skip backup restore, use test data instead
         if self.dev_mode:
-            print("[DEV] Running in development mode")
-            print("[DEV] Skipping backup restore, using test data instead")
+            self.logger.info("Running in development mode")
+            self.logger.info("Skipping backup restore, using test data instead")
             init_database()
             seed_test_data()
         else:
@@ -95,7 +101,7 @@ class Application:
         if not self.dev_mode:
             self.backup_service.start()
         else:
-            print("[DEV] Automatic backups disabled in development mode")
+            self.logger.info("Automatic backups disabled in development mode")
 
         # Start replay file watching
         self.replay_watch_service.start()
@@ -155,11 +161,11 @@ class Application:
         try:
             success = run_migrations(backup_path)
             if success:
-                print(f"[INFO] Database migrations applied to {backup_path}")
+                self.logger.info(f"Database migrations applied to {backup_path}")
             else:
-                print("[WARN] No migrations needed or migration check failed")
+                self.logger.warning("No migrations needed or migration check failed")
         except Exception as e:
-            print(f"[ERROR] Migration failed: {e}")
+            self.logger.error(f"Migration failed: {e}")
             # Continue anyway - the backup will be restored as-is
             # init_database() will create any missing tables
 
