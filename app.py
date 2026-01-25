@@ -89,7 +89,8 @@ class Application:
         # Create main window with services
         self.main_window = MainWindow(
             player_service=self.player_service,
-            match_history_service=self.match_history_service
+            match_history_service=self.match_history_service,
+            replay_watch_service=self.replay_watch_service
         )
 
         # Connect backup signals to UI
