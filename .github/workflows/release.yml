@@ -107,9 +107,49 @@ jobs:
           Get-Content release_notes.md
         shell: pwsh
 
+      - name: Download and extract screp
+        run: |
+          # settings.py에서 URL 추출
+          $screpUrl = python -c "from config.settings import Settings; print(Settings().screp_download_url)"
+          
+          Write-Host "Downloading screp from $screpUrl"
+          Invoke-WebRequest -Uri $screpUrl -OutFile screp.zip
+          
+          # 압축 해제
+          Expand-Archive -Path screp.zip -DestinationPath screp_temp -Force
+          
+          # screp.exe를 dist 폴더로 이동
+          Move-Item -Path screp_temp/screp.exe -Destination dist/screp.exe
+          
+          # 임시 파일 정리
+          Remove-Item -Path screp.zip
+          Remove-Item -Path screp_temp -Recurse
+          
+          Write-Host "screp.exe added to dist/"
+          Get-ChildItem dist/
+        shell: pwsh
+
       - name: Create ZIP archive
         run: |
-          Compress-Archive -Path dist/GG_Archive.exe -DestinationPath dist/GG_Archive-${{ steps.get_version.outputs.VERSION }}.zip
+          # 릴리즈용 임시 폴더 생성
+          New-Item -ItemType Directory -Path release_temp -Force
+          
+          # 파일들 복사
+          Copy-Item -Path dist/GG_Archive.exe -Destination release_temp/
+          Copy-Item -Path dist/screp.exe -Destination release_temp/
+          Copy-Item -Path licenses -Destination release_temp/licenses -Recurse
+          
+          # 압축
+          Compress-Archive -Path release_temp/* -DestinationPath dist/GG_Archive-${{ steps.get_version.outputs.VERSION }}.zip
+          
+          # 임시 폴더 정리
+          Remove-Item -Path release_temp -Recurse
+          
+          Write-Host "Created ZIP with contents:"
+          # ZIP 내용 확인
+          Expand-Archive -Path dist/GG_Archive-${{ steps.get_version.outputs.VERSION }}.zip -DestinationPath zip_check -Force
+          Get-ChildItem -Recurse zip_check
+          Remove-Item -Path zip_check -Recurse
         shell: pwsh
 
       - name: Upload artifact
