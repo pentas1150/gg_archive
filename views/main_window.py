@@ -240,7 +240,10 @@ class MainWindow(QMainWindow):
             "GG Archive 정보",
             f"GG Archive v{VersionConfig.version}\n\n"
             "리플레이 감시 및 백업 애플리케이션입니다.\n\n"
-            f"© 2026 pentas1150"
+            "이 앱은 리플레이 파싱을 위해 screp을 사용합니다.\n"
+            "https://github.com/icza/screp\n\n"
+            "더 많은 리플레이 정보: https://repmastered.icza.net\n\n"
+            "© 2026 pentas1150"
         )
 
     @Slot()

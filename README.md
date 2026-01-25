@@ -52,8 +52,8 @@
 ### 요구 사항
 - Python 3.11
 - 스타크래프트 리마스터
-- **screp v1.12.16 (최상위에 위치 필수!!)**
-    - https://github.com/icza/screp/releases/download/v1.12.16/screp-v1.12.16-windows-amd64.zip
+- **screp v1.13.0 (최상위에 위치 필수!!)**
+    - https://github.com/icza/screp/releases/download/v1.13.0/screp-v1.13.0-windows-amd64.zip
 
 ### 설치 방법 (소스 기반)
 ```bash
@@ -130,4 +130,5 @@ MIT License
 
 ## Acknowledgements
 
-- [screp](https://github.com/icza/screp) - 스타크래프트 리플레이 파서. 이 프로젝트 덕분에 리플레이 분석이 가능했습니다.
+- [screp](https://github.com/icza/screp) - 스타크래프트 리플레이 파서 (Apache License 2.0). 이 프로젝트 덕분에 리플레이 분석이 가능했습니다.
+- [repmastered.icza.net](https://repmastered.icza.net) - 더 많은 리플레이 정보와 플레이어 통계를 확인할 수 있습니다.
