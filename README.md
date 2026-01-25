@@ -45,6 +45,9 @@
 - SQLite 기반 로컬 데이터 저장
 - 데이터베이스 백업 기능
 
+<img width="760" height="810" alt="gg_archive_load_autosave" src="https://github.com/user-attachments/assets/b6706d03-b8d2-486d-8069-4094ff1d1be0" />
+
+
 <br>
 
 ## 설치
