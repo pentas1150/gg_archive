@@ -41,9 +41,9 @@
 <img width="726" height="805" alt="gg_archive_detail" src="https://github.com/user-attachments/assets/39a02796-2897-4ff5-9548-3ff69436896f" />
 
 ### 기타 기능
+- AutoSave 리플레이 일괄 불러오기 (파일 > AutoSave 리플레이 불러오기)
 - SQLite 기반 로컬 데이터 저장
 - 데이터베이스 백업 기능
-- AutoSave 리플레이 일괄 불러오기
 
 <br>
 
