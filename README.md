@@ -25,6 +25,9 @@
 - 게임 종료 시 자동으로 전적 기록
 - 백그라운드에서 조용히 동작 (시스템 트레이)
 
+<img width="733" height="820" alt="gg_archive_all_stats" src="https://github.com/user-attachments/assets/2286532d-66e9-498d-907a-ad6c3a20df21" />
+
+
 ### 상대별 전적 관리
 - 상대 플레이어별 승/패/승률 통계
 - 맵별 전적 분석
@@ -34,6 +37,8 @@
 - 상대방의 플레이 스타일 메모
 - 자주 쓰는 빌드, 특징 등 자유롭게 기록
 - 다음에 만났을 때 참고 가능
+
+<img width="726" height="805" alt="gg_archive_detail" src="https://github.com/user-attachments/assets/39a02796-2897-4ff5-9548-3ff69436896f" />
 
 ### 기타 기능
 - SQLite 기반 로컬 데이터 저장
