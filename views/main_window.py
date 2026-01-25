@@ -245,7 +245,12 @@ class MainWindow(QMainWindow):
 
     @Slot()
     def _on_settings_saved(self):
-        """Handle settings saved - switch to All Stats view."""
+        """Handle settings saved - restart replay watcher and switch to All Stats view."""
+        # Restart replay watch service with new settings
+        if self.replay_watch_service:
+            self.replay_watch_service.restart()
+            self.status_bar.showMessage("설정이 저장되었습니다. 리플레이 감시가 재시작되었습니다.", 3000)
+
         self._load_and_show_stats()
 
     def _load_and_show_stats(self):

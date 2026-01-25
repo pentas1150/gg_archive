@@ -80,6 +80,16 @@ class ReplayWatchService(QObject):
 
     def start(self):
         """Start watching for replay file changes."""
+        # Reload config to get latest settings
+        self.app_config = AppConfig.get_instance()
+
+        # Check if config is valid before starting
+        if not self.app_config.is_valid():
+            self.logger.warning("Config is not valid. Skipping file watcher start.")
+            self.logger.warning(f"  player_id: '{self.app_config.player_id}'")
+            self.logger.warning(f"  replay_dir: '{self.app_config.replay_dir}'")
+            return
+
         replay_file = self.app_config.replay_file
         watch_dir = replay_file.parent
 
@@ -117,6 +127,14 @@ class ReplayWatchService(QObject):
             self._observer.join(timeout=5)
             self._observer = None
             self.logger.info("Stopped watching")
+
+    def restart(self):
+        """Restart the file watcher with updated config."""
+        self.logger.info("Restarting file watcher...")
+        self.stop()
+        # Reload config to pick up new settings
+        self.app_config = AppConfig.reload()
+        self.start()
 
     def analyze_replay_and_upsert(self, replay_file: Path) -> MatchHistoryDTO:
         with replay_watch_uow() as uow:
