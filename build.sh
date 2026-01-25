@@ -26,6 +26,7 @@ pyinstaller --onefile --windowed --name "$APP_NAME" \
     --add-data "alembic.ini:." \
     --icon "$ICON_PATH" \
     --collect-all PySide6 \
+    --collect-all watchdog \
     --exclude-module tests \
     --exclude-module pytest \
     --exclude-module _pytest \
