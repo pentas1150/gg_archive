@@ -18,6 +18,7 @@ from PySide6.QtCore import Signal, Qt
 
 from common.const import TypeOrderColumn, TypeOrderDirection
 from common.event_bus import EventBus
+from common.ui_state import UIState
 
 from models.player import Player
 from services.player_service import PlayerService
@@ -57,11 +58,9 @@ class AllStatsWidget(QWidget):
     def __init__(self, player_service: PlayerService, parent=None):
         super().__init__(parent)
         self._config: AppConfig = AppConfig.get_instance()
+        self._ui_state = UIState.get_instance()
         self._player_service: PlayerService = player_service
         self._players: list[Player] = []
-        self._search_game_id: str = ""
-        self._order_column: TypeOrderColumn = TypeOrderColumn.LAST_PLAYED_AT
-        self._order_direction: TypeOrderDirection = TypeOrderDirection.DESC
         self._setup_ui()
         self._subscribe_events()
 
@@ -267,7 +266,7 @@ class AllStatsWidget(QWidget):
 
     def _on_search(self):
         """Handle search action."""
-        self._search_game_id = self.search_input.text().strip()
+        self._ui_state.all_stats.search_game_id = self.search_input.text().strip()
         self._refresh()
 
     def _on_header_clicked(self, column_index: int):
@@ -276,16 +275,18 @@ class AllStatsWidget(QWidget):
         if order_column is None:
             return
 
+        state = self._ui_state.all_stats
+
         # Toggle direction if same column, otherwise default to ASC
-        if self._order_column == order_column:
-            self._order_direction = (
+        if state.order_column == order_column:
+            state.order_direction = (
                 TypeOrderDirection.DESC
-                if self._order_direction == TypeOrderDirection.ASC
+                if state.order_direction == TypeOrderDirection.ASC
                 else TypeOrderDirection.ASC
             )
         else:
-            self._order_column = order_column
-            self._order_direction = TypeOrderDirection.ASC
+            state.order_column = order_column
+            state.order_direction = TypeOrderDirection.ASC
 
         # Update header labels with arrow
         self._update_header_arrows(column_index)
@@ -295,7 +296,7 @@ class AllStatsWidget(QWidget):
 
     def _update_header_arrows(self, sorted_column: int):
         """Update header labels to show sort arrow on the sorted column."""
-        arrow = " ▲" if self._order_direction == TypeOrderDirection.ASC else " ▼"
+        arrow = " ▲" if self._ui_state.all_stats.order_direction == TypeOrderDirection.ASC else " ▼"
         for i, label in enumerate(self._header_labels):
             if i == sorted_column:
                 self.table.horizontalHeaderItem(i).setText(label + arrow)
@@ -304,10 +305,11 @@ class AllStatsWidget(QWidget):
 
     def _refresh(self):
         """Refresh data from database with current search/sort settings."""
+        state = self._ui_state.all_stats
         self._players = self._player_service.get_all_players(
-            search_game_id=self._search_game_id,
-            order_by=self._order_column,
-            order_direction=self._order_direction
+            search_game_id=state.search_game_id,
+            order_by=state.order_column,
+            order_direction=state.order_direction
         )
         self._refresh_table()
 
@@ -385,3 +387,7 @@ class AllStatsWidget(QWidget):
 
         dialog = QuickSettingsDialog(self)
         dialog.exec()
+
+    def refresh(self):
+        """Refresh the data and table."""
+        self._refresh()
