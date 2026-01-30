@@ -14,6 +14,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Slot, QUrl
 from PySide6.QtGui import QAction, QIcon, QDesktopServices
 
+from common.ui_state import UIState
+
 from resources import get_icon_path
 from services.player_service import PlayerService
 from services.match_history_service import MatchHistoryService
@@ -44,6 +46,7 @@ class MainWindow(QMainWindow):
         super().__init__(parent)
 
         self.settings = Settings()
+        self._ui_state = UIState.get_instance()
         self.player_service = player_service
         self.match_history_service = match_history_service
         self.replay_watch_service = replay_watch_service
@@ -258,9 +261,7 @@ class MainWindow(QMainWindow):
 
     def _load_and_show_stats(self):
         """Load player data and show the All Stats view."""
-        if self.player_service:
-            players = self.player_service.get_all_players()
-            self.all_stats_widget.set_players(players)
+        self.all_stats_widget.refresh()
         self.stacked_widget.setCurrentIndex(1)
         self.status_bar.showMessage("플레이어 통계를 불러왔습니다", 3000)
 
