@@ -3,9 +3,12 @@ Centralized logging configuration for GG Archive.
 
 This module provides a unified logging system that writes logs to both
 console and file based on settings.log_file_path.
+
+Log files are rotated daily at midnight and kept for 7 days.
 """
 import logging
 import sys
+from logging.handlers import TimedRotatingFileHandler
 from pathlib import Path
 from typing import Optional
 
@@ -54,7 +57,21 @@ def setup_logger(log_file_path: Optional[Path] = None, level: int = logging.INFO
     # Ensure log directory exists
     log_file_path.parent.mkdir(parents=True, exist_ok=True)
 
-    file_handler = logging.FileHandler(log_file_path, encoding="utf-8")
+    # Delete existing log file (legacy cleanup before TimedRotatingFileHandler)
+    # TimedRotatingFileHandler will create a fresh file
+    if log_file_path.exists():
+        try:
+            log_file_path.unlink()
+        except OSError:
+            pass  # Ignore if file is locked or cannot be deleted
+
+    # File handler with daily rotation (keeps 7 log files)
+    file_handler = TimedRotatingFileHandler(
+        log_file_path,
+        when="midnight",
+        backupCount=7,
+        encoding="utf-8"
+    )
     file_handler.setLevel(level)
     file_handler.setFormatter(formatter)
     logger.addHandler(file_handler)
