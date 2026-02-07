@@ -37,6 +37,10 @@ class EventBus(QObject):
     # Data events
     data_refresh_requested = Signal()    # Request to refresh all data
 
+    # Packet monitoring (matching watch)
+    start_packet_monitoring = Signal()   # Request to start packet monitoring (app start / LastReplay.rep changed)
+    opponent_detected_from_packet = Signal(str)  # Opponent game_id extracted from packet
+
     # ==========================================================================
     # Singleton Pattern
     # ==========================================================================
