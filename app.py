@@ -13,6 +13,7 @@ from database.connection import DatabaseManager
 from database.migrations import init_database, seed_test_data, run_migrations
 from services.background.backup_service import BackupService
 from services.background.replay_watch_service import ReplayWatchService
+from services.background.opponent_packet_watch_service import OpponentPacketWatchService
 from services.player_service import PlayerService
 from services.match_history_service import MatchHistoryService
 from views.main_window import MainWindow
@@ -86,11 +87,16 @@ class Application:
         # Initialize replay watch service
         self.replay_watch_service = ReplayWatchService()
 
+        # Initialize opponent (packet) watch service
+        self.opponent_packet_watch_service = OpponentPacketWatchService()
+        self.opponent_packet_watch_service.start()
+
         # Create main window with services
         self.main_window = MainWindow(
             player_service=self.player_service,
             match_history_service=self.match_history_service,
-            replay_watch_service=self.replay_watch_service
+            replay_watch_service=self.replay_watch_service,
+            opponent_packet_watch_service=self.opponent_packet_watch_service,
         )
 
         # Connect backup signals to UI
@@ -172,6 +178,8 @@ class Application:
 
     def _on_exit(self):
         """Cleanup on application exit."""
+        # Stop opponent (packet) watch service
+        self.opponent_packet_watch_service.stop()
         # Stop replay watch service
         self.replay_watch_service.stop()
 

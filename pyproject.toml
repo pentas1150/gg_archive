@@ -13,6 +13,8 @@ alembic = ">=1.13.0"
 pydantic = ">=2.12.5"
 watchdog = ">=4.0.0"
 tzdata = ">=2024.1"
+scapy = "2.5.0"
+psutil = "^7.2.2"
 
 [tool.poetry.group.dev.dependencies]
 pytest = ">=7.0.0"
