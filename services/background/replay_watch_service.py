@@ -201,6 +201,9 @@ class ReplayWatchService(QObject):
             self.logger.error(f"Failed to analyze replay: {last_replay_file} {e}")
             self.event_bus.replay_processing_error.emit(f"{last_replay_file}: {e}")
             return
+        finally:
+            # LastReplay.rep 처리 후 패킷 감시 다시 시작
+            self.event_bus.start_packet_monitoring.emit()
 
         # Emit event to update the UI
         self.event_bus.replay_added.emit(match_history)

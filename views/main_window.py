@@ -14,12 +14,14 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Slot, QUrl
 from PySide6.QtGui import QAction, QIcon, QDesktopServices
 
+from common.event_bus import EventBus
 from common.ui_state import UIState
 
 from resources import get_icon_path
 from services.player_service import PlayerService
 from services.match_history_service import MatchHistoryService
 from services.background.replay_watch_service import ReplayWatchService
+from services.background.opponent_packet_watch_service import OpponentPacketWatchService
 from .settings_widget import SettingsWidget
 from .all_stats_widget import AllStatsWidget
 from .player_detail_widget import PlayerDetailWidget
@@ -41,6 +43,7 @@ class MainWindow(QMainWindow):
         player_service: PlayerService | None = None,
         match_history_service: MatchHistoryService | None = None,
         replay_watch_service: ReplayWatchService | None = None,
+        opponent_packet_watch_service: OpponentPacketWatchService | None = None,
         parent=None
     ):
         super().__init__(parent)
@@ -50,11 +53,13 @@ class MainWindow(QMainWindow):
         self.player_service = player_service
         self.match_history_service = match_history_service
         self.replay_watch_service = replay_watch_service
+        self.opponent_packet_watch_service = opponent_packet_watch_service
 
         self._setup_ui()
         self._setup_menu_bar()
         self._setup_status_bar()
         self._setup_system_tray()
+        self._subscribe_events()
         self._determine_initial_view()
 
     def _setup_ui(self):
@@ -89,6 +94,11 @@ class MainWindow(QMainWindow):
         self.player_detail_widget.back_clicked.connect(self._on_back_to_stats)
         self.player_detail_widget.description_updated.connect(self._on_description_updated)
         self.stacked_widget.addWidget(self.player_detail_widget)
+
+    def _subscribe_events(self):
+        """Subscribe to EventBus for packet monitoring -> player detail."""
+        event_bus = EventBus.instance()
+        event_bus.opponent_detected_from_packet.connect(self._on_opponent_detected_from_packet)
 
     def _determine_initial_view(self):
         """Determine initial view based on config validity."""
@@ -271,6 +281,19 @@ class MainWindow(QMainWindow):
         # set_player now handles loading match histories with current sort settings
         self.player_detail_widget.set_player(player)
         self.stacked_widget.setCurrentIndex(2)
+
+    @Slot(str)
+    def _on_opponent_detected_from_packet(self, game_id: str):
+        """패킷에서 상대 ID 추출 시, 전적이 있으면 플레이어 상세 위젯 자동 표시."""
+        if not self.player_service:
+            return
+        player = self.player_service.get_player_by_game_id(game_id)
+        if player is None:
+            self.status_bar.showMessage(f"상대 플레이어 전적: {game_id} 없음", 3000)
+            return
+        self.player_detail_widget.set_player(player)
+        self.stacked_widget.setCurrentIndex(2)
+        self.status_bar.showMessage(f"상대 플레이어 전적: {game_id}", 3000)
 
     @Slot()
     def _on_back_to_stats(self):

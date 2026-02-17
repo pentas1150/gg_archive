@@ -1,6 +1,8 @@
 """
 Player Service - Business logic for Player operations.
 """
+from typing import Optional
+
 from common.const import TypeOrderColumn, TypeOrderDirection
 from common.uow.player import player_uow
 
@@ -43,6 +45,15 @@ class PlayerService:
             return uow.players.find_all_with_order_and_search_by_game_id(
                 search_game_id, order_by, order_direction
             )
+
+    def get_player_by_game_id(self, game_id: str) -> Optional[Player]:
+        """Get a player by game ID, or None if not found."""
+        with player_uow(readonly=True) as uow:
+            player = uow.players.find_by_game_id(game_id)
+            if player is not None:
+                uow.session.expunge(player)
+            
+            return player
 
     def update_description(self, game_id: str, description: str) -> None:
         """Update the description for a player by game ID."""
