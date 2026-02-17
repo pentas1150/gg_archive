@@ -13,7 +13,6 @@ from alembic import op
 import sqlalchemy as sa
 
 from config.settings import Settings
-from common.logger import get_logger
 
 
 # revision identifiers, used by Alembic.
@@ -23,15 +22,12 @@ branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 settings = Settings()
 
-logger = get_logger("migrations")
-
 def upgrade() -> None:
     try:
         if settings.backup_path.exists():
             # 백업 파일 생성
             shutil.copy2(settings.backup_path, settings.backup_path.with_suffix('.bak'))
     except Exception as e:
-        logger.error("Failed to backup database")
         raise Exception(f"Failed to backup database: {e}")
 
     """Apply data migration for played_at and last_played_at."""
@@ -65,7 +61,6 @@ def upgrade() -> None:
             # 백업 파일 삭제
             Path(settings.backup_path.with_suffix('.bak')).unlink()
     except Exception:
-        logger.error("Failed to delete backup file")
         pass
 
 
@@ -80,6 +75,5 @@ def downgrade() -> None:
             # 백업 파일 복원
             shutil.copy2(settings.backup_path.with_suffix('.bak'), settings.backup_path)
     except Exception as e:
-        logger.error("Failed to restore database")
         raise Exception(f"Failed to restore database: {e}")
 
