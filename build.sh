@@ -28,6 +28,7 @@ pyinstaller --onefile --windowed --name "$APP_NAME" \
     --icon "$ICON_PATH" \
     --collect-all PySide6 \
     --collect-all watchdog \
+    --hidden-import logging.config \
     --exclude-module tests \
     --exclude-module pytest \
     --exclude-module _pytest \
