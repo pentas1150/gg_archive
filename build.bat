@@ -33,6 +33,7 @@ pyinstaller --onefile --windowed --name %APP_NAME% ^
     --icon %ICON_PATH% ^
     --collect-all PySide6 ^
     --collect-all watchdog ^
+    --hidden-import logging.config ^
     --hidden-import watchdog.observers.read_directory_changes ^
     --hidden-import watchdog.observers.winapi ^
     --hidden-import watchdog.observers.polling ^
