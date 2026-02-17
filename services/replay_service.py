@@ -2,7 +2,7 @@ import os
 import re
 import json
 import subprocess
-from datetime import datetime, UTC
+from datetime import datetime, UTC, timedelta
 from pathlib import Path
 from typing import Any, Optional
 
@@ -167,39 +167,44 @@ class ReplayService:
         return True
 
     def analyze_replay(self, rep_path: str, my_name: str) -> ReplayAnalysisDTO:
-        data = self.run_screp(Path(rep_path))
-        header = data.get("Header") or data.get("header") or {}
-        players = self.players_from_header(header)
+        try:
+            data = self.run_screp(Path(rep_path))
+            header = data.get("Header") or data.get("header") or {}
+            players = self.players_from_header(header)
 
-        if len(players) != 2:
-            raise ReplayAnalysisError(TypeErrorCode.NOT_1VS1, str(rep_path))
-        if my_name not in [p["name"] for p in players]:
-            raise ReplayAnalysisError(TypeErrorCode.NOT_MY_REPLAY, str(rep_path))
+            if len(players) != 2:
+                raise ReplayAnalysisError(TypeErrorCode.NOT_1VS1, str(rep_path))
+            if my_name not in [p["name"] for p in players]:
+                raise ReplayAnalysisError(TypeErrorCode.NOT_MY_REPLAY, str(rep_path))
 
-        map_name = self.map_from_header(header)
-        race = self.opponent_race_from_players(players, my_name)
-        opponent_pid = [p["pid"] for p in players if p["name"] != my_name][0]
-        opponent_apm = [p["APM"] for p in data["Computed"]["PlayerDescs"] if p["PlayerID"] == opponent_pid][0]
-        opponent_eapm = [p["EAPM"] for p in data["Computed"]["PlayerDescs"] if p["PlayerID"] == opponent_pid][0]
+            map_name = self.map_from_header(header)
+            race = self.opponent_race_from_players(players, my_name)
+            opponent_pid = [p["pid"] for p in players if p["name"] != my_name][0]
+            opponent_apm = [p["APM"] for p in data["Computed"]["PlayerDescs"] if p["PlayerID"] == opponent_pid][0]
+            opponent_eapm = [p["EAPM"] for p in data["Computed"]["PlayerDescs"] if p["PlayerID"] == opponent_pid][0]
 
-        frames, speed = self.frames_and_speed(data)
-        seconds = self.frames_to_seconds(frames, speed) if frames is not None else None
-        if not seconds or seconds < self.app_config.playtime_threshold:
-            raise ReplayAnalysisError(
-                TypeErrorCode.PLAYTIME_TOO_SHORT,
-                f"{int(seconds) if seconds else 0}초"
+            frames, speed = self.frames_and_speed(data)
+            seconds = self.frames_to_seconds(frames, speed) if frames is not None else None
+            if not seconds or seconds < self.app_config.playtime_threshold:
+                raise ReplayAnalysisError(
+                    TypeErrorCode.PLAYTIME_TOO_SHORT,
+                    f"{int(seconds) if seconds else 0}초"
+                )
+
+            is_win = self.is_player_win(data, players, my_name)
+            played_at = datetime.fromisoformat(header["StartTime"]).astimezone(UTC)
+            played_at += timedelta(seconds=seconds)
+
+            return ReplayAnalysisDTO(
+                opponent_id=[p["name"] for p in players if p["name"] != my_name][0],
+                race=race,
+                map_name=map_name,
+                apm=opponent_apm,
+                eapm=opponent_eapm,
+                is_win=is_win,
+                playtime=int(seconds),
+                played_at=played_at
             )
-
-        is_win = self.is_player_win(data, players, my_name)
-        played_at = datetime.fromisoformat(header["StartTime"]).astimezone(UTC)
-
-        return ReplayAnalysisDTO(
-            opponent_id=[p["name"] for p in players if p["name"] != my_name][0],
-            race=race,
-            map_name=map_name,
-            apm=opponent_apm,
-            eapm=opponent_eapm,
-            is_win=is_win,
-            playtime=int(seconds),
-            played_at=played_at
-        )
+        except Exception as e:
+            self.logger.error(f"Failed to analyze replay: {rep_path} {e}")
+            raise ReplayAnalysisError(TypeErrorCode.ANALYSIS_FAILED, str(e))
