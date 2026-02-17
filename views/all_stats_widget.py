@@ -356,7 +356,7 @@ class AllStatsWidget(QWidget):
                     player.last_played_at
                     .replace(tzinfo=UTC)
                     .astimezone(time_zone)
-                    .strftime("%Y-%m-%d %H:%M")
+                    .strftime("%Y-%m-%d %I:%M %p")
                 )
                 timestamp = (
                     player.last_played_at
