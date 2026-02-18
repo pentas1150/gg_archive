@@ -1,5 +1,6 @@
 # GG Archive
 
+[![GitHub release](https://img.shields.io/github/v/release/pentas1150/gg_archive)](https://github.com/pentas1150/gg_archive/releases/latest)
 ![Python](https://img.shields.io/badge/Python-3.11-3776AB?logo=python&logoColor=white)
 ![PySide6](https://img.shields.io/badge/PySide6-6.6+-41CD52?logo=qt&logoColor=white)
 ![License](https://img.shields.io/badge/License-MIT-green)
@@ -25,8 +26,11 @@
 - 게임 종료 시 자동으로 전적 기록
 - 백그라운드에서 조용히 동작 (시스템 트레이)
 
-<img width="733" height="820" alt="gg_archive_all_stats" src="https://github.com/user-attachments/assets/2286532d-66e9-498d-907a-ad6c3a20df21" />
+<img width="760" height="810" alt="image" src="https://github.com/user-attachments/assets/f9424711-ec35-43ad-b5ce-ee5970fbd33c" />
 
+### 래더 상대 아이디 자동 인식
+- 패킷 분석으로 래더 상대방 아이디를 자동으로 인식
+- 전적 존재 시, 자동으로 Match History 화면으로 이동
 
 ### 상대별 전적 관리
 - 상대 플레이어별 승/패/승률 통계
@@ -38,7 +42,8 @@
 - 자주 쓰는 빌드, 특징 등 자유롭게 기록
 - 다음에 만났을 때 참고 가능
 
-<img width="726" height="805" alt="gg_archive_detail" src="https://github.com/user-attachments/assets/39a02796-2897-4ff5-9548-3ff69436896f" />
+<img width="760" height="810" alt="image" src="https://github.com/user-attachments/assets/545396dd-9202-4e21-9702-19d6371e806a" />
+
 
 ### 기타 기능
 - AutoSave 리플레이 일괄 불러오기 (파일 > AutoSave 리플레이 불러오기)
@@ -57,6 +62,8 @@
 - 스타크래프트 리마스터
 - **screp v1.13.0 (최상위에 위치 필수!!)**
     - https://github.com/icza/screp/releases/download/v1.13.0/screp-v1.13.0-windows-amd64.zip
+- **Npcap (상대방 아이디 인식에 사용)**
+    - https://npcap.com/#download 
 
 ### 설치 방법 (소스 기반)
 ```bash
