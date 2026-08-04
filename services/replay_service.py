@@ -8,7 +8,7 @@ from typing import Any, Optional
 
 from dto.replay import ReplayAnalysisDTO
 from config.app_config import AppConfig
-from common.const import TypeErrorCode
+from common.const import TypeErrorCode, TypeLeaveReason
 from common.exceptions import ReplayAnalysisError
 from common.logger import get_logger
 
@@ -151,8 +151,8 @@ class ReplayService:
 
         lose_player_id: int | None = None
         for cmd in root['Computed']['LeaveGameCmds']:
-            reason_type = cmd['Reason']['Name']
-            if reason_type == 'Quit':
+            reason = TypeLeaveReason(cmd.get('Reason', {}).get('Name'))
+            if reason.is_lose():
                 lose_player_id = cmd.get('PlayerID', None)
                 break
         else:
