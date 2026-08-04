@@ -64,6 +64,36 @@ class TypeTimeZone(Enum):
         return ZoneInfo(self.value)
 
 
+class TypeLeaveReason(Enum):
+    """screp LeaveGameCmd 의 Reason.Name 값.
+
+    screp `rep/repcmd/leavereasons.go` 의 LeaveReasons 와 1:1 대응.
+    screp 은 미지의 ID 에 "Unknown 0x07" 같은 이름을 동적으로 만들어 내려주므로
+    등록되지 않은 값은 모두 UNKNOWN 으로 흡수한다.
+    """
+
+    QUIT = "Quit"
+    DEFEAT = "Defeat"
+    VICTORY = "Victory"
+    FINISHED = "Finished"
+    DRAW = "Draw"
+    DROPPED = "Dropped"
+    UNKNOWN = "Unknown"
+
+    @classmethod
+    def _missing_(cls, value) -> "TypeLeaveReason":
+        """screp 이 새 사유를 내려줘도 예외 대신 UNKNOWN 으로 처리."""
+        return cls.UNKNOWN
+
+    def is_lose(self) -> bool:
+        """이 사유로 게임을 떠난 플레이어가 패배자인지."""
+        return self in (
+            TypeLeaveReason.QUIT,
+            TypeLeaveReason.DEFEAT,
+            TypeLeaveReason.DROPPED,
+        )
+
+
 class TypeErrorCode(Enum):
     """리플레이 분석 에러 코드."""
 
