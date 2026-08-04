@@ -16,6 +16,7 @@ from PySide6.QtGui import QAction, QIcon, QDesktopServices
 
 from common.event_bus import EventBus
 from common.ui_state import UIState
+from common.window_utils import bring_to_front
 
 from resources import get_icon_path
 from services.player_service import PlayerService
@@ -190,9 +191,7 @@ class MainWindow(QMainWindow):
 
     def _show_window(self):
         """Show and activate the main window."""
-        self.show()
-        self.raise_()
-        self.activateWindow()
+        bring_to_front(self)
 
     def _on_tray_activated(self, reason):
         """Handle tray icon activation."""
@@ -294,6 +293,9 @@ class MainWindow(QMainWindow):
         self.player_detail_widget.set_player(player)
         self.stacked_widget.setCurrentIndex(2)
         self.status_bar.showMessage(f"상대 플레이어 전적: {game_id}", 3000)
+
+        # 최소화/트레이/가려짐 상태여도 강제로 전면에 띄운다 (4초간 always-on-top 유지)
+        bring_to_front(self, keep_on_top_ms=4000)
 
     @Slot()
     def _on_back_to_stats(self):
